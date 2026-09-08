@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TradeOS">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>TradeOS · A股交易SOP</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;background:#f4f5f7;color:#171717}
+header{position:sticky;top:0;z-index:5;background:#111827;color:white;padding:14px 16px calc(12px + env(safe-area-inset-top));}
+h1{font-size:20px;margin:0 0 4px}.sub{font-size:12px;opacity:.75}
+nav{display:flex;overflow:auto;gap:7px;padding:10px;background:white;position:sticky;top:69px;z-index:4;border-bottom:1px solid #ddd}
+nav button{border:0;background:#eef0f3;border-radius:9px;padding:8px 10px;white-space:nowrap;font-size:13px}nav button.on{background:#111827;color:#fff}
+main{max-width:900px;margin:auto;padding:14px 14px 90px}.card{background:white;border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:0 1px 4px #0000000d}
+h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+label{font-size:12px;color:#555;display:block;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #d8dadd;border-radius:9px;padding:10px;font-size:15px;background:#fff}textarea{min-height:90px;resize:vertical}
+.btn{border:0;border-radius:9px;padding:10px 13px;font-size:14px;background:#111827;color:white;margin:4px 4px 4px 0}.btn.alt{background:#e9eaed;color:#111}.btn.danger{background:#b42318}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#eef0f3;font-size:12px}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+.stat{font-size:24px;font-weight:700}.muted{color:#777;font-size:12px}.check{display:flex;gap:8px;align-items:center;padding:6px 0}.check input{width:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #eee;padding:8px;text-align:left;vertical-align:top}
+.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#111827;color:white;padding:10px 14px;border-radius:10px;display:none;z-index:20}
+small{color:#777}
+</style>
+</head>
+<body>
+<header><h1>TradeOS</h1><div class="sub">A股个人交易 SOP · iPad 优先 · 本地数据库</div></header>
+<nav id="nav"></nav><main id="app"></main><div class="toast" id="toast"></div>
+<script>
+const STEPS=["交易日","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计"];
+const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
+const models=["龙头高位横盘二波","强势板块延续","断板反包","强势板块补涨套利","大阳回踩","分时强弱","KDJ趋势","其他"];
+let db, currentStep=0, state={days:[],bloggers:[]};
+
+function showToast(t){let e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1600)}
+function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
+function today(){return new Date().toISOString().slice(0,10)}
+function save(){localStorage.setItem("tradeos_v2",JSON.stringify(state))}
+function load(){try{let x=JSON.parse(localStorage.getItem("tradeos_v2"));if(x)state=x}catch(e){}}
+function day(){return state.days[0]||null}
+function newDay(){let d={id:id(),date:today(),createdAt:new Date().toISOString(),macro:{},market:{},trend:{},emotion:{phase:""},sector:{},stock:{},buy:{},position:{},holdings:[],sell:{},review:{},bloggerLogs:[],trades:[]};state.days.unshift(d);save();showToast("已建立今日交易日档案");render()}
+function ensure(){if(!day())newDay()}
+function setPath(obj,key,val){obj[key]=val;save()}
+function field(obj,key,label,type="text",placeholder=""){let v=obj[key]??"";return `<div><label>${label}</label><input data-obj="${obj.__name||""}" data-key="${key}" type="${type}" value="${String(v).replaceAll('"','&quot;')}" placeholder="${placeholder}"></div>`}
+function nav(){document.getElementById("nav").innerHTML=STEPS.map((x,i)=>`<button class="${i===currentStep?'on':''}" onclick="currentStep=${i};render()">${x}</button>`).join("")}
+function wrap(title,body){return `<section class="card"><h2>${title}</h2>${body}</section>`}
+function text(obj,key,label,ph=""){return `<div><label>${label}</label><textarea data-key="${key}" data-area="${obj._id}">${obj[key]||""}</textarea></div>`}
+function input(obj,key,label,type="text"){return `<div><label>${label}</label><input data-key="${key}" data-area="${obj._id}" type="${type}" value="${obj[key]??""}"></div>`}
+function select(obj,key,label,opts){return `<div><label>${label}</label><select data-key="${key}" data-area="${obj._id}"><option value="">请选择</option>${opts.map(x=>`<option ${obj[key]===x?"selected":""}>${x}</option>`).join("")}</select></div>`}
+function bindArea(obj){obj._id=obj._id||id();return obj}
+
+function render(){
+ nav(); ensure(); let d=day(), a=document.getElementById("app");
+ if(currentStep===0){a.innerHTML=wrap("交易日档案",`<div class="grid"><div><label>当前交易日</label><input value="${d.date}" id="date"></div><div><label>创建时间</label><input value="${new Date(d.createdAt).toLocaleString()}" disabled></div></div><p class="muted">每天建立一份完整的①～⑫记录。所有内容自动保存在本设备。</p><div class="row"><button class="btn" onclick="newDay()">＋新建交易日</button><button class="btn alt" onclick="exportData()">导出JSON备份</button><button class="btn alt" onclick="importData()">导入JSON</button></div>${state.days.length?`<h2 style="margin-top:16px">历史交易日</h2><table><tr><th>日期</th><th>情绪</th><th>市场</th><th>交易笔数</th></tr>${state.days.map(x=>`<tr><td>${x.date}</td><td>${x.emotion.phase||"-"}</td><td>${x.market.final||"-"}</td><td>${(x.trades||[]).length}</td></tr>`).join("")}</table>`:""}`)}
+ else if(currentStep===1)a.innerHTML=sectionArea(d,"macro","① 宏观","宏观环境、政策、流动性、外围市场与自己的判断。");
+ else if(currentStep===2)a.innerHTML=marketPage(d);
+ else if(currentStep===3)a.innerHTML=sectionArea(d,"trend","③ 大势","趋势方向、指数结构、风险偏好与操作环境。");
+ else if(currentStep===4)a.innerHTML=emotionPage(d);
+ else if(currentStep===5)a.innerHTML=sectorPage(d);
+ else if(currentStep===6)a.innerHTML=stockPage(d);
+ else if(currentStep===7)a.innerHTML=buyPage(d);
+ else if(currentStep===8)a.innerHTML=positionPage(d);
+ else if(currentStep===9)a.innerHTML=holdPage(d);
+ else if(currentStep===10)a.innerHTML=sellPage(d);
+ else if(currentStep===11)a.innerHTML=reviewPage(d);
+ else a.innerHTML=statsPage();
+ bind();
+}
+function sectionArea(d,key,title,desc){let o=bindArea(d[key]);return wrap(title,`<p class="muted">${desc}</p><div class="grid">${input(o,"conclusion","核心结论")} ${input(o,"rating","主观评级")} ${input(o,"risk","主要风险")}</div>${text(o,"notes","详细分析")}<button class="btn" onclick="save();showToast('已自动保存')">保存</button>`)}
+function marketPage(d){
+ let o=bindArea(d.market);let checks=[["vol2","大盘量比 ≥ 2.0"],["up3800","上涨家数 > 3800"],["strong3","强势板块有3个以上延续"],["leader","龙头股表态（涨停/新高）"],["idx5","三大指数均站上5日线"],["nocb","连板无核按钮/无天地板"]];
+ let risk=[["tech","科技板块集体大跌"],["stagnant","量比 > 4.0 且指数不涨"],["up800","上涨家数 < 800"],["kill","高位人气票出现3个以上跌停"]];
+ return wrap("② 大盘 · 严格市场层",`<div class="grid">${input(o,"volumeRatio","量比","number")} ${input(o,"upCount","上涨家数","number")} ${input(o,"amount","成交额（亿元）","number")}</div><h3>一类行情</h3>${checks.map(([k,t])=>`<div class="check"><input type="checkbox" data-area="${o._id}" data-key="${k}" ${o[k]?"checked":""}>${t}</div>`).join("")}<h3>二类行情</h3>${["无明显强势板块","成交额 < 4000亿","上涨家数 < 2000","连板无异常","三大指数部分站稳5日线"].map((t,i)=>`<div class="check"><input type="checkbox" data-area="${o._id}" data-key="b${i}" ${o["b"+i]?"checked":""}>${t}</div>`).join("")}<h3>观望风险覆盖</h3>${risk.map(([k,t])=>`<div class="check"><input type="checkbox" data-area="${o._id}" data-key="${k}" ${o[k]?"checked":""}>${t}</div>`).join("")}<div class="grid"><div><label>最终市场状态</label><select data-area="${o._id}" data-key="final"><option>一类行情</option><option>二类行情</option><option>观望</option></select></div></div>${text(o,"notes","市场分析")}<button class="btn" onclick="save();showToast('市场分析已保存')">保存</button>`);
+}
+function emotionPage(d){let o=bindArea(d.emotion);return wrap("④ 情绪周期",`${select(o,"phase","当前阶段",phases)}<div class="grid"><div><label>操作动作</label><select data-area="${o._id}" data-key="action"><option>启动：关注/买入</option><option>分歧：重点买入</option><option>加速：持有，不追</option><option>高潮：卖出/止盈</option><option>退潮：卖出/不新开</option><option>冰点：不参与</option><option>修复：观察等待新启动</option></select></div></div>${text(o,"notes","周期依据")}<button class="btn" onclick="save();showToast('已保存')">保存</button>`)}
+function sectorPage(d){let o=bindArea(d.sector);return wrap("⑤ 板块",`<div class="grid">${input(o,"name","主流板块")} ${input(o,"limitUps","涨停家数","number")} ${input(o,"fundFlow","资金流向")} ${input(o,"continuity","昨日领涨今日延续性")}</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="ladder" ${o.ladder?"checked":""}>阶梯式梯队</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="multiLeader" ${o.multiLeader?"checked":""}>多个涨停龙头</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="bigCandle" ${o.bigCandle?"checked":""}>多只大阳线股票</div>${text(o,"notes","板块分析")}<button class="btn" onclick="save();showToast('已保存')">保存</button>`)}
+function stockPage(d){let o=bindArea(d.stock);return wrap("⑥ 个股 · 选股条件",`<div class="grid">${input(o,"name","股票名称")} ${input(o,"code","代码")} ${input(o,"hot","同花顺热度榜排名","number")} ${select(o,"model","交易模式",models)}</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="leader" ${o.leader?"checked":""}>龙头/阶段领涨</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="ma" ${o.ma?"checked":""}>均线多头排列</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="limit10" ${o.limit10?"checked":""}>10日内有涨停</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="board2" ${o.board2?"checked":""}>二板以上</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="sectorStrong" ${o.sectorStrong?"checked":""}>处于强势板块</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="top100" ${o.top100?"checked":""}>热度榜 Top 100（排名≤100）</div>${text(o,"notes","个股判断")}<button class="btn" onclick="save();showToast('已保存')">保存</button>`)}
+function buyPage(d){let o=bindArea(d.buy);return wrap("⑦ 买点",`${select(o,"phase","买入情绪阶段",phases)} ${select(o,"model","对应模式",models)}<div class="grid">${input(o,"price","计划买入价","number")} ${input(o,"planStop","计划止损","number")} ${input(o,"confidence","确定性评分","number")}</div>${text(o,"notes","买入逻辑")}<button class="btn" onclick="save();showToast('已保存')">保存</button>`)}
+function positionPage(d){let o=bindArea(d.position);return wrap("⑧ 仓位",`<div class="grid">${input(o,"plan","计划仓位 %","number")} ${input(o,"actual","实际仓位 %","number")}</div><p class="muted">市场状态为“观望”时，严格层默认禁止正常激进开仓；若坚持交易，应在复盘中标记为SOP例外。</p>${text(o,"reason","仓位理由")}<button class="btn" onclick="save();showToast('已保存')">保存</button>`)}
+function holdPage(d){return wrap("⑨ 持仓",`<div class="grid"><div><label>股票</label><input id="hn"></div><div><label>数量</label><input id="hq" type="number"></div><div><label>成本价</label><input id="hc" type="number"></div><div><label>当前价</label><input id="hp" type="number"></div></div><button class="btn" onclick="addHolding()">加入持仓</button><table><tr><th>股票</th><th>数量</th><th>成本</th><th>当前价</th><th></th></tr>${(d.holdings||[]).map((x,i)=>`<tr><td>${x.name}</td><td>${x.qty}</td><td>${x.cost}</td><td>${x.price}</td><td><button class="btn danger" onclick="delHolding(${i})">删除</button></td></tr>`).join("")}</table>`)}
+function sellPage(d){let o=bindArea(d.sell);return wrap("⑩ 卖出",`<div class="grid">${input(o,"name","股票")} ${input(o,"sellPrice","卖出价","number")} ${input(o,"returnPct","实际收益率 %","number")}</div>${text(o,"reason","卖出理由")}<button class="btn" onclick="saveTrade()">记录卖出/交易</button>`)}
+function reviewPage(d){return wrap("⑪ 复盘 + 博主",`${text(d.review,"summary","今日复盘总结")}<div class="grid"><div><label>SOP执行情况</label><select data-area="${d.review._id}" data-key="discipline"><option>完整执行</option><option>部分执行</option><option>SOP例外</option></select></div><div><label>主要错误标签</label><input data-area="${d.review._id}" data-key="error" value="${d.review.error||""}"></div></div><h3>关注博主</h3><div class="grid"><input id="bn" placeholder="博主名称"><select id="bv"><option>看多</option><option>中性</option><option>看空</option></select><input id="bsector" placeholder="关注板块/方向"><input id="bchange" placeholder="持仓变化：新进/增仓/减仓/清仓"></div><textarea id="bnote" placeholder="博主观点/复盘备注"></textarea><button class="btn" onclick="addBlogger()">记录博主</button><table><tr><th>博主</th><th>观点</th><th>方向</th><th>持仓变化</th><th>备注</th></tr>${(d.bloggerLogs||[]).map(x=>`<tr><td>${x.name}</td><td>${x.view}</td><td>${x.sector}</td><td>${x.change}</td><td>${x.note}</td></tr>`).join("")}</table>`)}
+function statsPage(){let trades=state.days.flatMap(d=>d.trades||[]), wins=trades.filter(t=>+t.returnPct>0), losses=trades.filter(t=>+t.returnPct<0);let avg=trades.length?trades.reduce((s,t)=>s+(+t.returnPct||0),0)/trades.length:0;let logs=state.days.flatMap(d=>d.bloggerLogs||[]);let bm={};logs.forEach(x=>{bm[x.name]??={n:0,bull:0};bm[x.name].n++;if(x.view==="看多")bm[x.name].bull++});return wrap("⑫ 统计中心",`<div class="grid"><div class="card"><div class="stat">${trades.length}</div><div class="muted">交易笔数</div></div><div class="card"><div class="stat">${trades.length?(wins.length/trades.length*100).toFixed(1):"0"}%</div><div class="muted">胜率</div></div><div class="card"><div class="stat">${avg.toFixed(2)}%</div><div class="muted">平均单笔收益</div></div><div class="card"><div class="stat">${state.days.length}</div><div class="muted">交易日</div></div></div><h3>博主持仓/观点统计</h3><table><tr><th>博主</th><th>记录次数</th><th>看多次数</th><th>最近记录</th></tr>${Object.entries(bm).map(([n,x])=>`<tr><td>${n}</td><td>${x.n}</td><td>${x.bull}</td><td>本地历史</td></tr>`).join("")||"<tr><td colspan=4>尚无记录</td></tr>"}</table><h3>交易模式统计</h3>${models.map(m=>{let ts=trades.filter(t=>t.model===m);let w=ts.filter(t=>+t.returnPct>0);return `<p><b>${m}</b>：${ts.length}笔，胜率 ${ts.length?(w.length/ts.length*100).toFixed(1):"0"}%，平均 ${(ts.length?ts.reduce((s,t)=>s+(+t.returnPct||0),0)/ts.length:0).toFixed(2)}%</p>`}).join("")}<h3>历史交易</h3><table><tr><th>日期</th><th>股票</th><th>模式</th><th>收益</th></tr>${trades.map(t=>`<tr><td>${t.date}</td><td>${t.name}</td><td>${t.model||"-"}</td><td>${t.returnPct}%</td></tr>`).join("")}</table>`)}
+function bind(){document.querySelectorAll("[data-area]").forEach(e=>e.addEventListener("change",()=>{let id=e.dataset.area;let d=day();let targets=[d.macro,d.market,d.trend,d.emotion,d.sector,d.stock,d.buy,d.position,d.review,d.sell];let o=targets.find(x=>x._id===id);if(o){o[e.dataset.key]=e.type==="checkbox"?e.checked:e.value;save()}}));document.querySelectorAll("[data-key]:not([data-area])").forEach(e=>{})}
+function addHolding(){let d=day();d.holdings.push({name:hn.value,qty:hq.value,cost:hc.value,price:hp.value});save();render()}
+function delHolding(i){day().holdings.splice(i,1);save();render()}
+function addBlogger(){let d=day();d.bloggerLogs.push({name:bn.value,view:bv.value,sector:bsector.value,change:bchange.value,note:bnote.value,date:d.date});save();render()}
+function saveTrade(){let d=day();d.trades.push({date:d.date,name:d.sell.name||d.stock.name||"",model:d.stock.model||d.buy.model||"",returnPct:d.sell.returnPct||0});save();showToast("交易已记录");render()}
+function exportData(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TradeOS-backup-"+today()+".json";a.click()}
+function importData(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();render();showToast("恢复成功")}catch(e){alert("JSON无效")}};r.readAsText(i.files[0])};i.click()}
+load();ensure();render();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
