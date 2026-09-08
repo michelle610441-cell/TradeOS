@@ -34,16 +34,17 @@ small{color:#777}
 const STEPS=["交易日","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计"];
 const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
 const models=["龙头高位横盘二波","强势板块延续","断板反包","强势板块补涨套利","大阳回踩","分时强弱","KDJ趋势","其他"];
-let db, currentStep=0, state={days:[],bloggers:[]};
+let db, currentStep=0, state={days:[],bloggers:[]}, selectedDayId=null;
 
 function showToast(t){let e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1600)}
 function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function today(){return new Date().toISOString().slice(0,10)}
 function save(){localStorage.setItem("tradeos_v2",JSON.stringify(state))}
 function load(){try{let x=JSON.parse(localStorage.getItem("tradeos_v2"));if(x)state=x}catch(e){}}
-function day(){return state.days[0]||null}
-function newDay(){let d={id:id(),date:today(),createdAt:new Date().toISOString(),macro:{},market:{},trend:{},emotion:{phase:""},sector:{},stock:{},buy:{},position:{},holdings:[],sell:{},review:{},bloggerLogs:[],trades:[]};state.days.unshift(d);save();showToast("已建立今日交易日档案");render()}
-function ensure(){if(!day())newDay()}
+function day(){return state.days.find(x=>x.id===selectedDayId)||state.days[0]||null}
+function newDay(){let d={id:id(),date:today(),createdAt:new Date().toISOString(),macro:{},market:{},trend:{},emotion:{phase:""},sector:{},stock:{},buy:{},position:{},holdings:[],sell:{},review:{},bloggerLogs:[],trades:[]};state.days.unshift(d);selectedDayId=d.id;save();showToast("已建立今日交易日档案");render()}
+function ensure(){if(!day())newDay();else if(!selectedDayId)selectedDayId=state.days[0].id}
+function selectDay(x){selectedDayId=x;currentStep=0;render()}
 function setPath(obj,key,val){obj[key]=val;save()}
 function field(obj,key,label,type="text",placeholder=""){let v=obj[key]??"";return `<div><label>${label}</label><input data-obj="${obj.__name||""}" data-key="${key}" type="${type}" value="${String(v).replaceAll('"','&quot;')}" placeholder="${placeholder}"></div>`}
 function nav(){document.getElementById("nav").innerHTML=STEPS.map((x,i)=>`<button class="${i===currentStep?'on':''}" onclick="currentStep=${i};render()">${x}</button>`).join("")}
@@ -55,7 +56,7 @@ function bindArea(obj){obj._id=obj._id||id();return obj}
 
 function render(){
  nav(); ensure(); let d=day(), a=document.getElementById("app");
- if(currentStep===0){a.innerHTML=wrap("交易日档案",`<div class="grid"><div><label>当前交易日</label><input value="${d.date}" id="date"></div><div><label>创建时间</label><input value="${new Date(d.createdAt).toLocaleString()}" disabled></div></div><p class="muted">每天建立一份完整的①～⑫记录。所有内容自动保存在本设备。</p><div class="row"><button class="btn" onclick="newDay()">＋新建交易日</button><button class="btn alt" onclick="exportData()">导出JSON备份</button><button class="btn alt" onclick="importData()">导入JSON</button></div>${state.days.length?`<h2 style="margin-top:16px">历史交易日</h2><table><tr><th>日期</th><th>情绪</th><th>市场</th><th>交易笔数</th></tr>${state.days.map(x=>`<tr><td>${x.date}</td><td>${x.emotion.phase||"-"}</td><td>${x.market.final||"-"}</td><td>${(x.trades||[]).length}</td></tr>`).join("")}</table>`:""}`)}
+ if(currentStep===0){a.innerHTML=wrap("交易日档案",`<div class="grid"><div><label>当前交易日</label><input value="${d.date}" id="date"></div><div><label>创建时间</label><input value="${new Date(d.createdAt).toLocaleString()}" disabled></div></div><p class="muted">每天建立一份完整的①～⑫记录。所有内容自动保存在本设备。点击历史日期即可查看对应日期的完整内容。</p><div class="row"><button class="btn" onclick="newDay()">＋新建交易日</button><button class="btn alt" onclick="exportData()">导出JSON备份</button><button class="btn alt" onclick="importData()">导入JSON</button></div>${state.days.length?`<h2 style="margin-top:16px">历史交易日</h2><table><tr><th>日期</th><th>情绪</th><th>市场</th><th>交易笔数</th></tr>${state.days.map(x=>`<tr><td>${x.date}</td><td>${x.emotion.phase||"-"}</td><td>${x.market.final||"-"}</td><td>${(x.trades||[]).length}</td></tr>`).join("")}</table>`:""}`)}
  else if(currentStep===1)a.innerHTML=sectionArea(d,"macro","① 宏观","宏观环境、政策、流动性、外围市场与自己的判断。");
  else if(currentStep===2)a.innerHTML=marketPage(d);
  else if(currentStep===3)a.innerHTML=sectionArea(d,"trend","③ 大势","趋势方向、指数结构、风险偏好与操作环境。");
@@ -86,13 +87,15 @@ function sellPage(d){let o=bindArea(d.sell);return wrap("⑩ 卖出",`<div class
 function reviewPage(d){return wrap("⑪ 复盘 + 博主",`${text(d.review,"summary","今日复盘总结")}<div class="grid"><div><label>SOP执行情况</label><select data-area="${d.review._id}" data-key="discipline"><option>完整执行</option><option>部分执行</option><option>SOP例外</option></select></div><div><label>主要错误标签</label><input data-area="${d.review._id}" data-key="error" value="${d.review.error||""}"></div></div><h3>关注博主</h3><div class="grid"><input id="bn" placeholder="博主名称"><select id="bv"><option>看多</option><option>中性</option><option>看空</option></select><input id="bsector" placeholder="关注板块/方向"><input id="bchange" placeholder="持仓变化：新进/增仓/减仓/清仓"></div><textarea id="bnote" placeholder="博主观点/复盘备注"></textarea><button class="btn" onclick="addBlogger()">记录博主</button><table><tr><th>博主</th><th>观点</th><th>方向</th><th>持仓变化</th><th>备注</th></tr>${(d.bloggerLogs||[]).map(x=>`<tr><td>${x.name}</td><td>${x.view}</td><td>${x.sector}</td><td>${x.change}</td><td>${x.note}</td></tr>`).join("")}</table>`)}
 function statsPage(){let trades=state.days.flatMap(d=>d.trades||[]), wins=trades.filter(t=>+t.returnPct>0), losses=trades.filter(t=>+t.returnPct<0);let avg=trades.length?trades.reduce((s,t)=>s+(+t.returnPct||0),0)/trades.length:0;let logs=state.days.flatMap(d=>d.bloggerLogs||[]);let bm={};logs.forEach(x=>{bm[x.name]??={n:0,bull:0};bm[x.name].n++;if(x.view==="看多")bm[x.name].bull++});return wrap("⑫ 统计中心",`<div class="grid"><div class="card"><div class="stat">${trades.length}</div><div class="muted">交易笔数</div></div><div class="card"><div class="stat">${trades.length?(wins.length/trades.length*100).toFixed(1):"0"}%</div><div class="muted">胜率</div></div><div class="card"><div class="stat">${avg.toFixed(2)}%</div><div class="muted">平均单笔收益</div></div><div class="card"><div class="stat">${state.days.length}</div><div class="muted">交易日</div></div></div><h3>博主持仓/观点统计</h3><table><tr><th>博主</th><th>记录次数</th><th>看多次数</th><th>最近记录</th></tr>${Object.entries(bm).map(([n,x])=>`<tr><td>${n}</td><td>${x.n}</td><td>${x.bull}</td><td>本地历史</td></tr>`).join("")||"<tr><td colspan=4>尚无记录</td></tr>"}</table><h3>交易模式统计</h3>${models.map(m=>{let ts=trades.filter(t=>t.model===m);let w=ts.filter(t=>+t.returnPct>0);return `<p><b>${m}</b>：${ts.length}笔，胜率 ${ts.length?(w.length/ts.length*100).toFixed(1):"0"}%，平均 ${(ts.length?ts.reduce((s,t)=>s+(+t.returnPct||0),0)/ts.length:0).toFixed(2)}%</p>`}).join("")}<h3>历史交易</h3><table><tr><th>日期</th><th>股票</th><th>模式</th><th>收益</th></tr>${trades.map(t=>`<tr><td>${t.date}</td><td>${t.name}</td><td>${t.model||"-"}</td><td>${t.returnPct}%</td></tr>`).join("")}</table>`)}
 function bind(){document.querySelectorAll("[data-area]").forEach(e=>e.addEventListener("change",()=>{let id=e.dataset.area;let d=day();let targets=[d.macro,d.market,d.trend,d.emotion,d.sector,d.stock,d.buy,d.position,d.review,d.sell];let o=targets.find(x=>x._id===id);if(o){o[e.dataset.key]=e.type==="checkbox"?e.checked:e.value;save()}}));document.querySelectorAll("[data-key]:not([data-area])").forEach(e=>{})}
+function prevDay(){let i=state.days.findIndex(x=>x.id===day().id);if(i<state.days.length-1){selectedDayId=state.days[i+1].id;render()}}
+function nextDay(){let i=state.days.findIndex(x=>x.id===day().id);if(i>0){selectedDayId=state.days[i-1].id;render()}}
 function addHolding(){let d=day();d.holdings.push({name:hn.value,qty:hq.value,cost:hc.value,price:hp.value});save();render()}
 function delHolding(i){day().holdings.splice(i,1);save();render()}
 function addBlogger(){let d=day();d.bloggerLogs.push({name:bn.value,view:bv.value,sector:bsector.value,change:bchange.value,note:bnote.value,date:d.date});save();render()}
 function saveTrade(){let d=day();d.trades.push({date:d.date,name:d.sell.name||d.stock.name||"",model:d.stock.model||d.buy.model||"",returnPct:d.sell.returnPct||0});save();showToast("交易已记录");render()}
 function exportData(){let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TradeOS-backup-"+today()+".json";a.click()}
 function importData(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);save();render();showToast("恢复成功")}catch(e){alert("JSON无效")}};r.readAsText(i.files[0])};i.click()}
-load();ensure();render();
+load();ensure();if(!selectedDayId)selectedDayId=state.days[0]?.id;render();
 </script>
 <script>
 if ("serviceWorker" in navigator) {
