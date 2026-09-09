@@ -1,0 +1,193 @@
+{
+  "version": "2.6-complete",
+  "days": [
+    {
+      "id": "e19216de-ade0-4412-9d6a-d26250e88b69",
+      "date": "2026-09-08",
+      "createdAt": "2026-09-08T15:55:39.029Z",
+      "macro": {
+        "_id": "19e397a6-3812-4302-81f4-0ba7a7169e7e",
+        "conclusion": "大盘弱势",
+        "rating": "中性",
+        "risk": "上证指数下跌",
+        "notes": "大盘连续五日震荡，正处于压力为即将突破之际，急需一次放量大涨，否则即将回踩。"
+      },
+      "market": {
+        "_id": "b476c0e6-befd-442a-9735-088ce37c61ea",
+        "volumeRatio": "1.02",
+        "upCount": "3417",
+        "amount": "19784",
+        "idx5": true,
+        "nocb": true,
+        "leader": true,
+        "strong3": true,
+        "notes": "农业、传媒、房地产"
+      },
+      "trend": {
+        "_id": "298b8577-4f15-4aaa-88c6-d010eb08ad2e",
+        "conclusion": "震荡",
+        "rating": "5"
+      },
+      "emotion": {
+        "phase": "高潮",
+        "_id": "6f49ef11-9c76-48b3-81d7-df12599de3c4"
+      },
+      "sector": {
+        "_id": "c8df5714-e69d-4f16-af52-91188ff46e86",
+        "name": "农业",
+        "limitUps": "10",
+        "fundFlow": "流入",
+        "continuity": "延续",
+        "ladder": true,
+        "multiLeader": true,
+        "bigCandle": true
+      },
+      "stock": {
+        "_id": "16546a7e-1e22-4d80-870d-89924d584814",
+        "name": "天沃科技",
+        "code": "002564",
+        "hot": "327",
+        "limit10": true,
+        "board2": true,
+        "leader": true,
+        "ma": true,
+        "notes": "军工板块龙头。异动。受伊朗局势影响。"
+      },
+      "buy": {
+        "_id": "03ec6cff-288a-4c48-bc1e-c5d5060f9a76",
+        "phase": "启动",
+        "model": "断板反包",
+        "price": "5.52",
+        "planStop": "5.30",
+        "confidence": "4",
+        "notes": "底部放出巨量，7.17；承接较好，全天水上，多次试盘；竞价涨停；军工下午异动；龙虎榜机构游资净买入\n"
+      },
+      "position": {
+        "_id": "1662a64b-f34c-43f9-a9b8-822648dc90af",
+        "plan": "10",
+        "actual": "15.9",
+        "reason": "反包买点，不确定，轻仓试错"
+      },
+      "holdings": [
+        {
+          "name": "天沃科技",
+          "qty": "1300",
+          "cost": "5.524",
+          "price": "5.41"
+        },
+        {
+          "name": "湖南黄金",
+          "qty": "400",
+          "cost": "27.722",
+          "price": "25.86"
+        }
+      ],
+      "sell": {
+        "_id": "6ce53d58-5949-4113-9fe2-90b5cb42cba6",
+        "name": "我爱我家",
+        "sellPrice": "3.24",
+        "returnPct": "3.3",
+        "reason": "开盘跌破均线"
+      },
+      "review": {},
+      "bloggerLogs": [
+        {
+          "name": "77超帅",
+          "view": "看多",
+          "sector": "医药、传媒",
+          "change": "进读者传媒 持中京电子千金药业",
+          "note": "医药没有结束",
+          "date": "2026-09-08"
+        },
+        {
+          "name": "华强北夏洛克",
+          "view": "看多",
+          "sector": "房地产、科技",
+          "change": "进共进兴森 持我爱我家",
+          "note": "盘面轮动非常快方向从ai硬件转向农业、农化、白糖、有色和传媒",
+          "date": "2026-09-08"
+        },
+        {
+          "name": "游神",
+          "view": "看多",
+          "sector": "传媒、农业、零售",
+          "change": "持白洋国芳",
+          "note": "主线是消费，龙版传媒停牌，读者是下一个连板龙",
+          "date": "2026-09-08"
+        }
+      ],
+      "trades": [
+        {
+          "date": "2026-09-08",
+          "name": "我爱我家",
+          "model": "断板反包",
+          "returnPct": "3.3"
+        }
+      ],
+      "stocks": [
+        {
+          "_id": "16546a7e-1e22-4d80-870d-89924d584814",
+          "name": "天沃科技",
+          "code": "002564",
+          "hot": "327",
+          "limit10": true,
+          "board2": true,
+          "leader": true,
+          "ma": true,
+          "notes": "军工板块龙头。异动。受伊朗局势影响。",
+          "id": "stock-1",
+          "buy": {
+            "_id": "03ec6cff-288a-4c48-bc1e-c5d5060f9a76",
+            "phase": "启动",
+            "model": "断板反包",
+            "price": "5.52",
+            "planStop": "5.30",
+            "confidence": "4",
+            "notes": "底部放出巨量，7.17；承接较好，全天水上，多次试盘；竞价涨停；军工下午异动；龙虎榜机构游资净买入\n"
+          },
+          "position": {
+            "_id": "1662a64b-f34c-43f9-a9b8-822648dc90af",
+            "plan": "10",
+            "actual": "15.9",
+            "reason": "反包买点，不确定，轻仓试错"
+          }
+        }
+      ],
+      "currentStockId": "stock-1",
+      "leaderboard": {
+        "institutions": [],
+        "hotMoney": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "7d872614-fd46-4a8e-921f-9549e3975ef1",
+      "date": "2026-09-08",
+      "createdAt": "2026-09-08T15:54:26.724Z",
+      "macro": {},
+      "market": {},
+      "trend": {},
+      "emotion": {
+        "phase": ""
+      },
+      "sector": {},
+      "stock": {},
+      "buy": {},
+      "position": {},
+      "holdings": [],
+      "sell": {},
+      "review": {},
+      "bloggerLogs": [],
+      "trades": [],
+      "stocks": [],
+      "currentStockId": null,
+      "leaderboard": {
+        "institutions": [],
+        "hotMoney": [],
+        "notes": ""
+      }
+    }
+  ],
+  "bloggers": [],
+  "migrationNote": "Converted from TradeOS-backup-2026-09-08.json for TradeOS V2.6 Complete"
+}
