@@ -41,7 +41,7 @@ small{color:#7889b1}.small{padding:6px 10px;font-size:12px}
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="brandMark">↗</div><div><h1>TradeOS</h1><div class="sub">记录 · 复盘 · 成长</div></div></div><div class="headerTip">✦ 好的交易，源于清晰的记录。</div><div class="headerMeta">A股 · V2.6.1 · 本地数据库</div></header><div class="shell"><aside class="sidebar"><div class="sideTitle">交易SOP</div><nav id="nav"></nav><div class="sideBottom"><div>TradeOS</div><span>iPad 优先 · 本地存储</span></div></aside><main id="app"></main></div><div class="toast" id="toast"></div>
+<header><div class="brand"><div class="brandMark">↗</div><div><h1>TradeOS</h1><div class="sub">记录 · 复盘 · 成长</div></div></div><div class="headerTip">✦ 好的交易，源于清晰的记录。</div><div class="headerMeta">A股 · V2.7 · 本地数据库</div></header><div class="shell"><aside class="sidebar"><div class="sideTitle">交易SOP</div><nav id="nav"></nav><div class="sideBottom"><div>TradeOS</div><span>iPad 优先 · 本地存储</span></div></aside><main id="app"></main></div><div class="toast" id="toast"></div>
 <script>
 const STEPS=["交易日","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计","⑬龙虎榜"];
 const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
@@ -57,7 +57,7 @@ function day(){return state.days.find(x=>x.id===selectedDayId)||state.days[0]||n
 function selectDay(id){selectedDayId=id;currentStep=0;render()}
 function prevDay(){let i=state.days.findIndex(x=>x.id===selectedDayId);if(i>=0 && state.days[i+1]){selectedDayId=state.days[i+1].id;currentStep=0;render()}}
 function nextDay(){let i=state.days.findIndex(x=>x.id===selectedDayId);if(i>0){selectedDayId=state.days[i-1].id;currentStep=0;render()}}
-function newDay(){let d={id:id(),date:today(),createdAt:new Date().toISOString(),macro:{},market:{},trend:{},emotion:{phase:""},sector:{},stocks:[],currentStockId:null,buy:{},position:{},holdings:[],sell:{},review:{},bloggerLogs:[],trades:[],leaderboard:{institutions:[],hotMoney:[],notes:""}};state.days.unshift(d);selectedDayId=d.id;save();showToast("已建立今日交易日档案");render()}
+function newDay(){let d={id:id(),date:today(),createdAt:new Date().toISOString(),macro:{},market:{},trend:{},emotion:{phase:""},sector:{},stocks:[],currentStockId:null,buy:{},position:{},holdings:[],sell:{},review:{},bloggerLogs:[],trades:[],ledger:[],account:{cash:"",initialCapital:"",deposit:"",withdraw:"",note:""},accountSnapshot:{equity:"",cash:"",marketValue:"",floatingPnl:"",realizedPnl:"",totalPnl:"",returnPct:"",positionPct:""},leaderboard:{institutions:[],hotMoney:[],notes:""}};state.days.unshift(d);selectedDayId=d.id;save();showToast("已建立今日交易日档案");render()}
 function ensure(){
  if(!day()){newDay();return}
  if(!selectedDayId)selectedDayId=state.days[0].id;
@@ -167,28 +167,40 @@ function addRank(kind){
 }
 function delRank(kind,i){let d=day();d.leaderboard[kind].splice(i,1);save();render();}
 
-function statsPage(){let trades=state.days.flatMap(d=>d.trades||[]),wins=trades.filter(t=>+t.returnPct>0);let avg=trades.length?trades.reduce((s,t)=>s+(+t.returnPct||0),0)/trades.length:0;let bm={};state.days.flatMap(d=>d.bloggerLogs||[]).forEach(x=>{bm[x.name]??={n:0,bull:0};bm[x.name].n++;if(x.view==="看多")bm[x.name].bull++});let rows=models.map(m=>{let ts=trades.filter(t=>t.model===m),w=ts.filter(t=>+t.returnPct>0),ls=ts.map(t=>+t.returnPct).filter(v=>v<0),av=ts.length?ts.reduce((s,t)=>s+(+t.returnPct||0),0)/ts.length:0,ml=ls.length?Math.min(...ls):0;return {m,n:ts.length,wr:ts.length?w.length/ts.length*100:0,av,ml}});return wrap("⑫ 统计中心",`<p class="muted">统计以“实际交易记录”为核心。交易模式从⑥个股继承并保存为交易快照；如果当时填错，可以直接在下面的历史交易表里修正。</p><p class="hint">这意味着：⑥个股负责“这只股票属于什么模式”，⑩卖出负责“这次交易的结果”，⑫统计负责“检查和修正历史归类”。三者职责分开。</p><div class="grid"><div class="card"><div class="stat">${trades.length}</div><div class="muted">交易笔数</div></div><div class="card"><div class="stat">${trades.length?(wins.length/trades.length*100).toFixed(1):"0"}%</div><div class="muted">胜率</div></div><div class="card"><div class="stat">${avg.toFixed(2)}%</div><div class="muted">平均单笔收益</div></div><div class="card"><div class="stat">${state.days.length}</div><div class="muted">交易日</div></div></div><h3>交易模式统计</h3><div class="tableWrap"><table class="statsTable"><thead><tr><th>交易模式</th><th>样本数</th><th>胜率</th><th>平均收益</th><th>最大单笔亏损</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${x.m}</b></td><td>${x.n}</td><td>${x.wr.toFixed(1)}%</td><td>${x.av.toFixed(2)}%</td><td>${x.n?x.ml.toFixed(2)+"%":"—"}</td></tr>`).join("")}</tbody></table></div><h3>历史交易 · 可编辑 / 删除</h3><p class="hint">这里现在可以同时修正交易模式和实际收益率，也可以删除误录交易。修改后统计会立即重新计算。</p><div class="tableWrap"><table><tr><th>日期</th><th>股票</th><th>当前模式</th><th>实际收益率 %</th><th>操作</th></tr>${state.days.flatMap(d=> (d.trades||[]).map((t,i)=>({d,t,i}))).map(({d,t,i})=>`<tr><td>${d.date}</td><td>${t.name||"—"}</td><td><select onchange="changeTradeModelById('${d.id}','${t.id||""}',this.value,${i})">${models.map(m=>`<option ${t.model===m?"selected":""}>${m}</option>`).join("")}</select></td><td><input type="number" step="0.01" value="${Number(t.returnPct)||0}" onchange="changeTradeReturnById('${d.id}','${t.id||""}',this.value,${i})" style="min-width:110px"></td><td><button class="btn danger small" onclick="deleteTradeById('${d.id}','${t.id||""}',${i})">删除</button></td></tr>`).join("")||"<tr><td colspan=5>尚无交易记录</td></tr>"}</table></div><h3>博主持仓/观点统计</h3><div class="tableWrap"><table><tr><th>博主</th><th>记录次数</th><th>看多次数</th><th>最近记录</th></tr>${Object.entries(bm).map(([n,x])=>`<tr><td>${n}</td><td>${x.n}</td><td>${x.bull}</td><td>本地历史</td></tr>`).join("")||"<tr><td colspan=4>尚无记录</td></tr>"}</table></div>`)}
-function changeTradeModelByIndex(dayId,i,val){let d=state.days.find(x=>x.id===dayId);if(d&&d.trades[i]){d.trades[i].model=val;d.trades[i].modelEdited=true;save();showToast('交易模式已修正');render()}}
-function changeTradeModelById(dayId,tid,val,i){let d=state.days.find(x=>x.id===dayId);let t=tid?d?.trades?.find(x=>x.id===tid):d?.trades?.[i];if(t){t.model=val;t.modelEdited=true;save();showToast('交易模式已修正');render()}}
-function changeTradeReturnById(dayId,tid,val,i){let d=state.days.find(x=>x.id===dayId);let t=tid?d?.trades?.find(x=>x.id===tid):d?.trades?.[i];if(t){t.returnPct=(val===""||val==null)?0:Number(val);t.returnEdited=true;save();showToast("实际收益率已修正");render()}}
-function deleteTradeById(dayId,tid,i){let d=state.days.find(x=>x.id===dayId);if(!d)return;let idx=tid?d.trades.findIndex(x=>x.id===tid):i;if(idx>=0&&confirm("确定删除这笔交易记录吗？删除后统计会重新计算。")){d.trades.splice(idx,1);save();showToast("交易记录已删除");render()}}
-function bind(){document.querySelectorAll("[data-area]").forEach(e=>e.addEventListener("change",()=>{let id=e.dataset.area;let d=day();let targets=[d.macro,d.market,d.trend,d.emotion,d.sector,...stocksOf(d),d.buy,d.position,d.review,d.sell,d.leaderboard];let o=targets.find(x=>x._id===id);if(o){o[e.dataset.key]=e.type==="checkbox"?e.checked:e.value;save()}}));document.querySelectorAll("[data-key]:not([data-area])").forEach(e=>{})}
-function addHolding(){let d=day(),s=currentStock(d);if(!s){showToast("请先选择股票");return}d.holdings=d.holdings||[];d.holdings.push({id:id(),stockId:s.id,name:s.name||"",code:s.code||"",qty:hq.value,cost:hc.value,price:hp.value});save();render()}
-function delHolding(i){day().holdings.splice(i,1);save();render()}
-function addBlogger(){let d=day();d.bloggerLogs.push({name:bn.value,view:bv.value,sector:bsector.value,change:bchange.value,note:bnote.value,date:d.date});save();render()}
-function saveTrade(){
- let d=day(),sid=document.getElementById("sellStock")?.value||d.sell.stockId||(currentStock(d)&&currentStock(d).id),s=stocksOf(d).find(x=>x.id===sid);
- if(!s){showToast("请先在⑥个股添加股票");return}
- let rp=document.querySelector('[data-area="'+d.sell._id+'"][data-key="returnPct"]');
- let sp=document.querySelector('[data-area="'+d.sell._id+'"][data-key="sellPrice"]');
- let rr=document.querySelector('[data-area="'+d.sell._id+'"][data-key="reason"]');
- d.sell.stockId=sid;
- if(rp)d.sell.returnPct=rp.value;
- if(sp)d.sell.sellPrice=sp.value;
- if(rr)d.sell.reason=rr.value;
- let val=d.sell.returnPct;
- d.trades.push({id:id(),date:d.date,stockId:s.id,name:s.name||"",code:s.code||"",model:s.model||"",modelSource:"stock",returnPct:(val===""||val==null)?0:Number(val),sellPrice:d.sell.sellPrice||"",reason:d.sell.reason||"",createdAt:new Date().toISOString()});
- save();showToast("交易已记录");render()
+function statsPage(){
+ let trades=state.days.flatMap(d=>(d.trades||[]).map(t=>({...t,dayId:d.id,date:t.date||d.date}))),wins=trades.filter(t=>num(t.returnPct)>0);
+ let avg=trades.length?trades.reduce((s,t)=>s+num(t.returnPct),0)/trades.length:0;
+ let bm={};state.days.flatMap(d=>d.bloggerLogs||[]).forEach(x=>{bm[x.name]??={n:0,bull:0};bm[x.name].n++;if(x.view==="看多")bm[x.name].bull++});
+ let rows=models.map(m=>{let ts=trades.filter(t=>t.model===m),w=ts.filter(t=>num(t.returnPct)>0),ls=ts.map(t=>num(t.returnPct)).filter(v=>v<0),av=ts.length?ts.reduce((s,t)=>s+num(t.returnPct),0)/ts.length:0,ml=ls.length?Math.min(...ls):0;
+   let amt=ts.reduce((s,t)=>s+num(t.amount),0), pnl=ts.reduce((s,t)=>s+num(t.realizedPnl),0);
+   return {m,n:ts.length,wr:ts.length?w.length/ts.length*100:0,av,ml,amt,pnl};});
+ let snaps=equitySeries(), latest=snaps.length?snaps[snaps.length-1]:null;
+ let ledgers=state.days.flatMap(d=>(d.ledger||[]).map(x=>({...x,date:x.date||d.date})));
+ let realized=ledgers.reduce((s,x)=>s+num(x.realizedPnl),0), turnover=ledgers.reduce((s,x)=>s+num(x.amount),0);
+ let weightedDen=trades.reduce((s,t)=>s+Math.abs(num(t.actualPosition||t.positionPct||0)),0);
+ let weighted=weightedDen?trades.reduce((s,t)=>s+num(t.returnPct)*Math.abs(num(t.actualPosition||t.positionPct||0)),0)/weightedDen:0;
+ let sopGood=[],sopBad=[];
+ state.days.forEach(d=>{(d.trades||[]).forEach(t=>{((d.review?.discipline==="SOP例外"||d.review?.violation==="是")?sopBad:sopGood).push(t)})});
+ let gp=sopGood.reduce((s,t)=>s+num(t.returnPct),0), bp=sopBad.reduce((s,t)=>s+num(t.returnPct),0);
+ return wrap("⑫ 统计中心",`
+ <p class="muted">V2.7 同时统计“交易质量”和“账户真实资金表现”。账户曲线来自每日账户快照，入金/出金不会被当作收益。</p>
+ <h3>账户表现</h3>
+ <div class="grid">
+   <div class="card"><div class="stat">${latest?money(latest.equity):"—"}</div><div class="muted">最新账户权益</div></div>
+   <div class="card"><div class="stat">${latest?pct(latest.ret):"—"}</div><div class="muted">累计账户收益率</div></div>
+   <div class="card"><div class="stat">${money(realized)}</div><div class="muted">流水已实现盈亏</div></div>
+   <div class="card"><div class="stat">${money(turnover)}</div><div class="muted">累计成交金额</div></div>
+   <div class="card"><div class="stat">${pct(weighted)}</div><div class="muted">仓位加权收益</div></div>
+ </div>
+ <h3>账户权益曲线</h3>${equityChartSvg()}
+ <h3>交易质量</h3>
+ <div class="grid"><div class="card"><div class="stat">${trades.length}</div><div class="muted">交易笔数</div></div><div class="card"><div class="stat">${trades.length?(wins.length/trades.length*100).toFixed(1):"0"}%</div><div class="muted">胜率</div></div><div class="card"><div class="stat">${avg.toFixed(2)}%</div><div class="muted">平均单笔收益</div></div><div class="card"><div class="stat">${state.days.length}</div><div class="muted">交易日</div></div></div>
+ <h3>SOP纪律对比</h3>
+ <div class="grid"><div class="card"><div class="stat">${sopGood.length}</div><div class="muted">遵守SOP交易数</div></div><div class="card"><div class="stat">${gp.toFixed(2)}%</div><div class="muted">遵守SOP累计单笔收益和</div></div><div class="card"><div class="stat">${sopBad.length}</div><div class="muted">SOP例外交易数</div></div><div class="card"><div class="stat">${bp.toFixed(2)}%</div><div class="muted">SOP例外累计单笔收益和</div></div></div>
+ <h3>交易模式统计</h3><div class="tableWrap"><table class="statsTable"><thead><tr><th>交易模式</th><th>样本数</th><th>胜率</th><th>平均收益</th><th>最大单笔亏损</th><th>成交金额</th><th>已实现盈亏</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${x.m}</b></td><td>${x.n}</td><td>${x.wr.toFixed(1)}%</td><td>${x.av.toFixed(2)}%</td><td>${x.n?x.ml.toFixed(2)+"%":"—"}</td><td>${money(x.amt)}</td><td>${money(x.pnl)}</td></tr>`).join("")}</tbody></table></div>
+ <h3>历史交易 · 可编辑 / 删除</h3><p class="hint">可修正交易模式和实际收益率，也可以删除误录交易。修改后统计立即重算。</p><div class="tableWrap"><table><tr><th>日期</th><th>股票</th><th>当前模式</th><th>实际收益率 %</th><th>操作</th></tr>${state.days.flatMap(d=> (d.trades||[]).map((t,i)=>({d,t,i}))).map(({d,t,i})=>`<tr><td>${d.date}</td><td>${t.name||"—"}</td><td><select onchange="changeTradeModelById('${d.id}','${t.id||""}',this.value,${i})">${models.map(m=>`<option ${t.model===m?"selected":""}>${m}</option>`).join("")}</select></td><td><input type="number" step="0.01" value="${Number(t.returnPct)||0}" onchange="changeTradeReturnById('${d.id}','${t.id||""}',this.value,${i})" style="min-width:110px"></td><td><button class="btn danger small" onclick="deleteTradeById('${d.id}','${t.id||""}',${i})">删除</button></td></tr>`).join("")||"<tr><td colspan=5>尚无交易记录</td></tr>"}</table></div>
+ <h3>博主持仓/观点统计</h3><div class="tableWrap"><table><tr><th>博主</th><th>记录次数</th><th>看多次数</th><th>最近记录</th></tr>${Object.entries(bm).map(([n,x])=>`<tr><td>${n}</td><td>${x.n}</td><td>${x.bull}</td><td>本地历史</td></tr>`).join("")||"<tr><td colspan=4>尚无记录</td></tr>"}</table></div>
+ `)
 }
 function normalizeDay(d){
  d=d||{}; d.id=d.id||id(); d.date=d.date||today(); d.createdAt=d.createdAt||new Date().toISOString();
@@ -205,6 +217,9 @@ function normalizeDay(d){
  d.stocks.forEach(st=>{st.id=st.id||id();st.buy=st.buy||{};st.position=st.position||{}});
  d.currentStockId=d.currentStockId||(d.stocks[0]&&d.stocks[0].id)||null;
  d.buy=d.buy||{}; d.position=d.position||{}; d.holdings=d.holdings||[]; d.sell=d.sell||{};
+ d.ledger=d.ledger||[];
+ d.account=d.account||{cash:"",initialCapital:"",deposit:"",withdraw:"",note:""};
+ d.accountSnapshot=d.accountSnapshot||{equity:"",cash:"",marketValue:"",floatingPnl:"",realizedPnl:"",totalPnl:"",returnPct:"",positionPct:""};
  d.review=d.review||{}; d.bloggerLogs=d.bloggerLogs||[]; d.trades=d.trades||[];
  d.leaderboard=d.leaderboard||{institutions:[],hotMoney:[],notes:""};
  d.leaderboard.institutions=d.leaderboard.institutions||[];
@@ -225,7 +240,7 @@ function migratePayload(p){
  // 兼容单日对象
  return {days:[normalizeDay(p)],bloggers:[]};
 }
-function exportData(){let payload={version:"2.6.1",days:state.days,bloggers:state.bloggers||[],exportedAt:new Date().toISOString()};let blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TradeOS-backup-"+today()+".json";a.click()}
+function exportData(){let payload={version:"2.7",days:state.days,bloggers:state.bloggers||[],exportedAt:new Date().toISOString()};let blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TradeOS-backup-"+today()+".json";a.click()}
 function importData(){let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let r=new FileReader();r.onload=()=>{try{state=migratePayload(JSON.parse(r.result));selectedDayId=state.days[0]?.id||null;save();ensure();render();showToast("恢复成功")}catch(e){alert("JSON无效或格式无法识别")}};r.readAsText(i.files[0])};i.click()}
 load();ensure();render();
 </script>
