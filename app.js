@@ -2,6 +2,7 @@
 const STEPS=["交易日","◈ 今日驾驶舱","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计","⑬龙虎榜"];
 const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
 const models=["龙头高位横盘二波","强势板块延续","断板反包","强势板块补涨套利","大阳回踩","N字形走势","楔形/三角形","分时强弱","KDJ趋势","其他"];
+const DISCIPLINE_MOTTOS=["量能不足，谨慎追高。","先定主流板块，再判断情绪时机，最后寻找领涨个股。","拉升回踩再买，买确定性。","顺着情绪上升周期操作，避开退潮阶段。","成本不是市场的支撑位。","看好，不代表可以没有失效条件。"];
 let db, currentStep=0, selectedDayId=null, state={days:[],bloggers:[]};
 
 function showToast(t){let e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1600)}
@@ -9,13 +10,13 @@ function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.r
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 
 function save(){
- state.version='3.0.1';let d=day();if(d)d.updatedAt=new Date().toISOString();
- try{localStorage.setItem('tradeos_v3_0_1',JSON.stringify(state));return true}
+ state.version='3.1';let d=day();if(d)d.updatedAt=new Date().toISOString();
+ try{localStorage.setItem('tradeos_v3_1',JSON.stringify(state));return true}
  catch(e){showToast('保存失败，请立即导出完整备份：'+e.message);return false}
 }
 
 function load(){
- for(const key of ['tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
+ for(const key of ['tradeos_v3_1','tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
   const raw=localStorage.getItem(key);if(!raw)continue;
   try{state=migratePayload(JSON.parse(raw));return}catch(e){alert(key+' 读取失败，原数据未覆盖：'+e.message)}
  }
@@ -80,7 +81,7 @@ function render(){
  else if(currentStep===12)a.innerHTML=reviewPage(d);
  else if(currentStep===13)a.innerHTML=statsPage();
  else a.innerHTML=leaderboardPage(d);
- bind();
+ bind();renderDisciplineRadar(d);
 }
 function sectionArea(d,key,title,desc){let o=bindArea(d[key]);return wrap(title,`<p class="muted">${desc}</p><p class="hint">先写你的判断，不自动抓新闻；把“结论”和“风险”写成当天可复盘的具体判断。</p><div class="grid">${input(o,"conclusion","核心结论")} ${input(o,"rating","主观评级")} ${input(o,"risk","主要风险")}</div>${text(o,"notes","详细分析")}<button class="btn" onclick="save();showToast('已自动保存')">保存</button>`)}
 function marketPage(d){
@@ -98,7 +99,7 @@ function stockPage(d){
  return wrap("⑥ 个股 · 多股票池",`<p class="muted">一天可以记录多只候选/交易股票。交易模式属于“个股”，而不是卖出页面；卖出时选择股票即可自动继承。</p><p class="hint">建议把真正准备交易的股票分别建立档案。这样同一天研究多只股票时，不会覆盖前一只股票。</p><div class="row"><select onchange="selectStock(this.value)">${stocksOf(d).map(x=>`<option value="${x.id}" ${x.id===s.id?"selected":""}>${x.name||"未命名股票"} ${x.code?"· "+x.code:""}</option>`).join("")}</select><button class="btn" onclick="newStock()">＋添加股票</button><button class="btn danger" onclick="deleteStock('${s.id}')">删除当前股票</button></div><div class="grid">${input(o,"name","股票名称")} ${input(o,"code","代码")} ${input(o,"hot","同花顺热度榜排名","number")} ${select(o,"model","交易模式",models)}</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="leader" ${o.leader?"checked":""}>龙头/阶段领涨</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="ma" ${o.ma?"checked":""}>均线多头排列</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="limit10" ${o.limit10?"checked":""}>10日内有涨停</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="board2" ${o.board2?"checked":""}>二板以上</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="sectorStrong" ${o.sectorStrong?"checked":""}>处于强势板块</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="top100" ${o.top100?"checked":""}>热度榜 Top 100（排名≤100）</div>${text(o,"notes","个股判断")}<button class="btn" onclick="save();showToast('当前股票已保存')">保存当前股票</button><h3>今日股票清单</h3><div class="tableWrap"><table><tr><th>股票</th><th>代码</th><th>交易模式</th><th>热度</th><th>状态</th></tr>${stocksOf(d).map(x=>`<tr><td><button class="btn alt small" onclick="selectStock('${x.id}')">${x.name||"未命名"}</button></td><td>${x.code||"—"}</td><td>${x.model||"—"}</td><td>${x.hot||"—"}</td><td>${x.id===s.id?"当前": ""}</td></tr>`).join("")}</table></div>`)
 }
 function buyPage(d){let s=currentStock(d);if(!s)return wrap("⑦ 买点",`<p class="muted">请先在⑥个股建立股票档案。买点必须绑定具体股票，避免多只股票互相覆盖。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.buy);let selected=`<b>${s.name||"未命名股票"}</b> · ${s.code||""} · 模式：<span class="pill">${s.model||"尚未设置"}</span>`;return wrap("⑦ 买点 · 当前股票",`<p class="muted">每只股票拥有独立买点。切换⑥个股中的股票后，这里的买点也会随之切换。</p><p class="hint">交易模式来自⑥个股；这里不重复填写模式，只记录这只股票具体在哪里、为什么买。</p><div class="card"><label>当前股票</label><div>${selected}</div></div>${select(o,"phase","买入情绪阶段",phases)}<div class="grid">${input(o,"price","计划买入价","number")} ${input(o,"planStop","计划止损","number")} ${input(o,"confidence","确定性评分","number")}</div>${text(o,"notes","买入逻辑")}${text(o,"invalidWhen","计划失效条件")}${text(o,"pendingActions","待执行动作")}${input(o,"takeProfit","计划止盈价","number")}${text(o,"changeReason","本次计划调整原因")}<button class="btn" onclick="save();showToast('当前股票买点已保存')">保存</button>`)}
-function positionPage(d){let s=currentStock(d);if(!s)return wrap("⑧ 仓位",`<p class="muted">请先在⑥个股建立股票档案。仓位与具体股票绑定。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.position);return wrap("⑧ 仓位 · 当前股票",`<p class="muted">每只股票拥有独立的计划仓位、实际仓位和仓位理由。</p><p class="hint">切换股票后，仓位数据同步切换；不会再出现上一只股票覆盖下一只股票的问题。</p><div class="card"><label>当前股票</label><div><b>${s.name||"未命名股票"}</b> · ${s.code||""} · 模式：<span class="pill">${s.model||"尚未设置"}</span></div></div><div class="grid">${input(o,"plan","计划仓位 %","number")} ${input(o,"actual","实际仓位 %","number")}</div>${text(o,"reason","仓位理由")}<button class="btn" onclick="save();showToast('当前股票仓位已保存')">保存</button>`)}
+function positionPage(d){let s=currentStock(d),r=bindArea(d.aiPlan);if(!s)return wrap("⑧ 仓位",`<h3>今日风险边界</h3><div class="twoCol">${input(r,'maxPositionPct','今日仓位上限 %','number')}${input(r,'maxLossPct','今日可接受亏损上限 %','number')}</div><p class="muted">请先在⑥个股建立股票档案。仓位与具体股票绑定。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.position);return wrap("⑧ 仓位 · 当前股票",`<h3>今日风险边界</h3><div class="twoCol">${input(r,'maxPositionPct','今日仓位上限 %','number')}${input(r,'maxLossPct','今日可接受亏损上限 %','number')}</div><p class="muted">每只股票拥有独立的计划仓位、实际仓位和仓位理由。</p><div class="selectedStock"><label>当前股票</label><b>${esc(s.name||"未命名股票")}</b> · ${esc(s.code||"")} · 模式：<span class="pill">${esc(s.model||"尚未设置")}</span></div><div class="twoCol">${input(o,"plan","计划仓位 %","number")} ${input(o,"actual","实际仓位 %","number")}</div>${text(o,"reason","仓位理由")}<button class="btn" onclick="save();showToast('当前股票仓位已保存')">保存</button>`)}
 
 
 function n(v){let x=Number(v);return Number.isFinite(x)?x:0}
@@ -303,7 +304,7 @@ function statsPage(){
    if(!bloggerRows)bloggerRows='<tr><td colspan="4">尚无记录</td></tr>';
 
    return wrap("⑫ 统计中心",
-     '<p class="muted">V3.0.1：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
+     '<p class="muted">V3.1：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
      '<h3>账户收益</h3>'+
      '<div class="grid">'+
        '<div class="card"><div class="stat">'+(last?yuan(last.equity):"—")+'</div><div class="muted">最新账户权益</div></div>'+
@@ -418,10 +419,10 @@ function migratePayload(p){
  }else byDate.set(d.date,d)}
  const days=[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date));
  const ids=new Set();days.forEach(d=>{if(ids.has(d.id))d.id=id();ids.add(d.id)});
- return {...p,version:'3.0.1',days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
+ return {...p,version:'3.1',days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
 }
 
-function exportData(){downloadJSON({...state,version:'3.0.1',exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
+function exportData(){downloadJSON({...state,version:'3.1',exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
 
 function importData(){
  const i=document.createElement('input');i.type='file';i.accept='.json';
@@ -479,28 +480,30 @@ function changeDate(value){
 }
 function dayPage(d){
  const o=bindArea(d.aiPlan);
- return wrap('交易日档案 · V3.0.1',`
- <div class="grid"><div><label>当前交易日（北京时间）</label><input type="date" value="${d.date}" onchange="changeDate(this.value)"></div><div><label>创建时间</label><p>${esc(d.createdAt?new Date(d.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'旧档案未记录')}</p></div><div><label>最近保存</label><p>${esc(d.updatedAt?new Date(d.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'尚未记录')}</p></div></div>
- <p class="hint">每个日期一份档案；新建按钮打开或建立北京时间今天的记录。日期不自动判断交易所节假日。</p>
- <div class="row"><button class="btn" onclick="newDay()">＋新建／打开今日</button><button class="btn alt" onclick="exportData()">导出完整备份</button><button class="btn alt" onclick="importData()">导入完整备份</button></div>
- <h3>AI 分析 JSON</h3><p class="hint">自动整理当前记录，发给另一个对话使用。AI 文件不能用于恢复软件；行情时间请按实际记录填写。</p>
- <div class="grid">${select(o,'session','分析时段',['盘前','盘中','盘后'])}${input(o,'asOf','本次数据截至（北京时间）','datetime-local')}${input(o,'maxPositionPct','今日仓位上限 %','number')}${input(o,'maxLossPct','今日可接受亏损上限 %','number')}</div>
- ${text(o,'expectation','市场预期')}${text(o,'actions','账户待执行计划')}${text(o,'questions','想让 AI 回答的问题')}
- <button class="btn" onclick="exportAI()">导出 AI 分析 JSON</button>
- <div class="row"><button class="btn alt" onclick="prevDay()">← 上一天</button><button class="btn alt" onclick="nextDay()">下一天 →</button></div>
+ return wrap('交易日档案 · V3.1',`
+ <section class="homeDate"><div><label>当前交易日（北京时间）</label><input type="date" value="${d.date}" onchange="changeDate(this.value)"></div><div class="homeDateActions"><button class="btn" onclick="newDay()">＋新建／打开今日</button><button class="btn alt" onclick="prevDay()">← 上一天</button><button class="btn alt" onclick="nextDay()">下一天 →</button></div></section>
+ <div class="metaStrip"><span>创建：${esc(d.createdAt?new Date(d.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'旧档案未记录')}</span><span>最近保存：${esc(d.updatedAt?new Date(d.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'尚未记录')}</span></div>
+ <section class="homePanel"><h3>AI 分析 JSON</h3><p class="hint">选择分析时段和数据时间后导出。仓位与亏损上限移到⑧仓位统一维护。</p><div class="twoCol">${select(o,'session','分析时段',['盘前','盘中','盘后'])}${input(o,'asOf','本次数据截至（北京时间）','datetime-local')}</div>${text(o,'questions','想让 AI 回答的问题')}<button class="btn" onclick="exportAI()">导出 AI 分析 JSON</button></section>
+ <details class="dataTools"><summary>数据管理（备份／导入）</summary><p class="hint">公开 GitHub 仓库不要上传导出的 JSON。</p><button class="btn alt" onclick="exportData()">导出完整备份</button><button class="btn alt" onclick="importData()">导入完整备份</button></details>
  <h3>历史交易日</h3><div class="tableWrap"><table><tr><th>日期</th><th>情绪</th><th>市场判断</th><th>交易笔数</th><th>操作</th></tr>${state.days.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.emotion.phase||'—')}</td><td>${esc(x.market.final||'—')}</td><td>${x.trades.length}</td><td><button class="btn small" onclick="selectDay('${x.id}')">查看</button><button class="btn danger small" onclick="deleteDay('${x.id}')">删除</button></td></tr>`).join('')}</table></div>`);
 }
 function dashboardWarnings(d,s){
  const out=[],m=d.market||{},phase=d.emotion.phase||'',limit=nullable(d.aiPlan.maxPositionPct);
  if(!m.final)out.push({level:'warn',text:'尚未填写最终市场状态'});
+ const energy=volumeEnergy(m);if(energy.value!==null&&energy.value<1)out.push({level:'warn',text:'量能不足，谨慎追高，等待回踩确认'});
  if(['退潮','冰点'].includes(phase))out.push({level:'bad',text:'情绪处于'+phase+'，按SOP不应新开仓'});
  const riskLabels={tech:'科技板块集体大跌',stagnant:'高量滞涨',up800:'上涨家数少于800',kill:'高位人气票批量跌停'};
  Object.keys(riskLabels).forEach(k=>{if(m[k])out.push({level:'bad',text:riskLabels[k]})});
  if(limit!==null&&nullable(s.positionPct)!==null&&s.positionPct>limit)out.push({level:'bad',text:'当前仓位 '+s.positionPct.toFixed(1)+'% 已超过今日上限 '+limit+'%'});
  (d.holdings||[]).forEach(h=>{const name=h.name||h.code||'未命名持仓';if(nullable(h.price)===null)out.push({level:'warn',text:name+' 缺少最新价格'});if(nullable(h.availableQty)===null)out.push({level:'warn',text:name+' 尚未核对可卖数量'});const st=d.stocks.find(x=>x.id===h.stockId);if(nullable(st?.buy?.planStop)===null)out.push({level:'warn',text:name+' 尚未设置当前止损'});});
  if(!d.aiPlan.actions)out.push({level:'warn',text:'尚未填写账户待执行计划'});
+ if(stocksOf(d).length&&!d.sector.name)out.push({level:'warn',text:'已有候选股，但主流板块尚未确认'});
+ stocksOf(d).forEach(st=>{const name=st.name||st.code||'未命名候选股';if(nullable(st.hot)!==null&&nullable(st.hot)>100)out.push({level:'warn',text:name+' 热度排名超过100，谨慎作为核心候选'});if(!st.model)out.push({level:'warn',text:name+' 尚未选择交易模式'});if(!st.buy.invalidWhen)out.push({level:'warn',text:name+' 尚未写明计划失效条件'})});
  return out;
 }
+function dailyMotto(d){const key=d?.date||today();return DISCIPLINE_MOTTOS[[...key].reduce((n,c)=>n+c.charCodeAt(0),0)%DISCIPLINE_MOTTOS.length]}
+function toggleRadar(){const el=document.getElementById('disciplineRadar');if(el)el.classList.toggle('open')}
+function renderDisciplineRadar(d){let el=document.getElementById('disciplineRadar');if(!el){el=document.createElement('aside');el.id='disciplineRadar';el.className='disciplineRadar';document.body.appendChild(el)}const alerts=dashboardWarnings(d,recomputeAccount(d)),top=alerts[0]?.text||'当前记录未发现明显纪律警报';el.innerHTML=`<button class="radarHead" onclick="toggleRadar()"><span>纪律雷达</span><b>${alerts.length?alerts.length+' 条提醒':'状态平稳'}</b></button><p class="radarMotto">“${esc(dailyMotto(d))}”</p><p class="radarTop">${esc(top)}</p><ul>${alerts.map(x=>`<li class="${x.level}">${esc(x.text)}</li>`).join('')||'<li class="ok">保持按计划执行</li>'}</ul><small>提醒不会阻止保存或交易记录。</small>`}
 function dashboardPage(d){
  const s=recomputeAccount(d),energy=volumeEnergy(d.market),warnings=dashboardWarnings(d,s),fresh=d.aiPlan.asOf||d.market.asOf||'',ready=[d.market.final,d.emotion.phase,d.sector.name,d.aiPlan.actions].filter(Boolean).length;
  const holdings=(d.holdings||[]).map(h=>{const st=d.stocks.find(x=>x.id===h.stockId),price=nullable(h.price),cost=nullable(h.cost),ret=cost>0&&price!==null?(price-cost)/cost*100:null,plan=planOf(st);return `<tr><td><b>${esc(h.name||'—')}</b><small>${esc(h.code||'')}</small></td><td>${percent(ret)}</td><td>${nullable(h.availableQty)===null?'待核对':esc(h.availableQty)}</td><td>${plan?.stopLoss??'—'}</td><td>${plan?.takeProfit??'—'}</td><td>${esc(h.assessment||'—')}</td><td>${esc(h.adviceStatus||'—')}</td></tr>`}).join('')||'<tr><td colspan="7">当前无持仓</td></tr>';
@@ -531,7 +534,7 @@ function updateVolumeDisplay(o){
 }
 function planOf(s){return s?{tradeMode:s.model||null,buyReason:s.buy.notes||null,entry:nullable(s.buy.price),stopLoss:nullable(s.buy.planStop),takeProfit:nullable(s.buy.takeProfit),positionPct:nullable(s.position.plan),invalidWhen:s.buy.invalidWhen||null,pendingActions:s.buy.pendingActions||null}:null}
 function holdingDetails(d){
- return d.holdings.map(h=>{bindArea(h);return `<div class="card"><h3>${esc(h.name||h.code||'持仓')} · 计划与价格时间</h3><div class="grid">${input(h,'availableQty','当前可卖数量（未知留空）','number')}${input(h,'priceAsOf','价格截至（北京时间）','datetime-local')}${input(h,'previousClose','上一交易日收盘价','number')}${input(h,'sector','所属板块')}${select(h,'exchange','交易所',['SSE','SZSE','BSE'])}</div><p class="hint">最初买入计划：${h.originalPlan?'已锁定建仓快照':'旧记录缺失，未自动推断'}。当前计划在⑥～⑧维护。</p>${text(h,'assessment','当前持仓判断')}${text(h,'lastAdvice','最近一次 AI 建议（手动粘贴，可选）')}${select(h,'adviceStatus','建议状态',['未采纳','已采纳','已失效'])}</div>`}).join('');
+ return d.holdings.map(h=>{bindArea(h);return `<div class="card"><h3>${esc(h.name||h.code||'持仓')} · 计划与价格时间</h3><div class="grid">${input(h,'availableQty','当前可卖数量（未知留空）','number')}${input(h,'priceAsOf','价格截至（北京时间）','datetime-local')}${input(h,'previousClose','上一交易日收盘价','number')}${input(h,'sector','所属板块')}</div><p class="hint">最初买入计划：${h.originalPlan?'已锁定建仓快照':'旧记录缺失，未自动推断'}。当前计划在⑥～⑧维护。</p>${text(h,'assessment','当前持仓判断')}${text(h,'lastAdvice','最近一次 AI 建议（手动粘贴，可选）')}${select(h,'adviceStatus','建议状态',['未采纳','已采纳','已失效'])}</div>`}).join('');
 }
 function timestamp(v){return v?(v.includes('Z')||/[+-]\d\d:\d\d$/.test(v)?v:v+':00+08:00'):null}
 function buildAI(d){
@@ -540,7 +543,7 @@ function buildAI(d){
  const knownPrices=d.holdings.every(h=>nullable(h.qty)!==null&&nullable(h.price)!==null);
  const mv=knownPrices?holdingCalc(d).marketValue:null,equity=mv!==null&&cash!==null?mv+cash:null;
  if(cash===null)missing.push('account.cash');if(!d.aiPlan.asOf)missing.push('meta.dataAsOf');
- const snapshot={meta:{schemaVersion:'1.1',appVersion:'3.0.1',exportId:id(),exportType:'analysis_snapshot',tradeDate:d.date,exportedAt:new Date().toISOString(),timezone:'Asia/Shanghai',session:({'盘前':'pre_market','盘中':'intraday','盘后':'post_market'})[d.aiPlan.session]||null,dataAsOf:timestamp(d.aiPlan.asOf),units:{money:'CNY',quantity:'shares',percentage:'35 means 35%'},source:'manual_records_and_calculations',requestType:'full_analysis'},
+ const snapshot={meta:{schemaVersion:'1.1',appVersion:'3.1',exportId:id(),exportType:'analysis_snapshot',tradeDate:d.date,exportedAt:new Date().toISOString(),timezone:'Asia/Shanghai',session:({'盘前':'pre_market','盘中':'intraday','盘后':'post_market'})[d.aiPlan.session]||null,dataAsOf:timestamp(d.aiPlan.asOf),units:{money:'CNY',quantity:'shares',percentage:'35 means 35%'},source:'manual_records_and_calculations',requestType:'full_analysis'},
  account:{cash,totalEquity:equity,totalPositionPct:equity>0?mv/equity*100:null,availableCashPct:equity>0?cash/equity*100:null,maxPositionPctToday:nullable(d.aiPlan.maxPositionPct),maxAcceptableLossPctToday:nullable(d.aiPlan.maxLossPct)},
  macro:clean(d.macro),market:{userAssessment:market,asOf:timestamp(d.market.asOf),derived:{volumeEnergy:volumeEnergy(d.market)}},trend:clean(d.trend),emotion:clean(d.emotion),sectors:[clean(d.sector)],
  holdings:d.holdings.map(h=>{

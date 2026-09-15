@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="TradeOS">
 
 
-<title>TradeOS · A股交易SOP · V3.0.1</title>
+<title>TradeOS · A股交易SOP · V3.1</title>
 <style>
 :root{
   --blue:#2563eb;--cyan:#06b6d4;--purple:#7c3aed;--ink:#10205a;--muted:#7f8db5;
@@ -29,6 +29,8 @@ h2{font-size:18px;margin:0 0 12px;color:#172b6b}h3{color:#263f8a}.grid{display:g
 label{font-size:12px;color:#4d6295;display:block;margin-bottom:5px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:100%;min-width:0;border:1px solid #cfdafa;border-radius:11px;padding:10px 11px;font-size:15px;background:rgba(255,255,255,.88);color:#182b63;outline:none;transition:.18s}input:focus,select:focus,textarea:focus{border-color:#6d7ff2;box-shadow:0 0 0 3px rgba(99,102,241,.12)}textarea{min-height:90px;resize:vertical}
 .btn{border:0;border-radius:11px;padding:10px 14px;font-size:14px;font-weight:650;color:#fff;background:linear-gradient(105deg,#2563eb,#4f46e5,#7c3aed);background-size:180% 180%;animation:buttonFlow 5s ease infinite;margin:4px 5px 4px 0;box-shadow:0 6px 15px rgba(79,70,229,.2);transition:transform .15s}.btn:active{transform:translateY(1px)}.btn.alt{color:#31529b;background:linear-gradient(135deg,#f4f8ff,#f3efff);border:1px solid #d7e0fa;box-shadow:none}.btn.danger{background:linear-gradient(105deg,#e11d48,#be123c);animation:none}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}.row>select,.row>input{width:auto;flex:1 1 260px}.row>.btn{flex:0 0 auto}.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#e9efff;font-size:12px;color:#36539a}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+.twoCol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.twoCol>*{min-width:0}.homeDate{display:grid;grid-template-columns:minmax(240px,.7fr) minmax(0,1.3fr);gap:18px;align-items:end;padding:16px;border-radius:16px;background:linear-gradient(135deg,#eef5ff,#f5f0ff)}.homeDateActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.metaStrip{display:flex;flex-wrap:wrap;gap:8px 24px;padding:10px 4px 16px;color:#7e8eb5;font-size:12px}.homePanel{padding:16px;margin:4px 0 14px;border:1px solid #dfe7ff;border-radius:16px;background:rgba(255,255,255,.55)}.homePanel h3{margin-top:0}.dataTools{padding:12px 14px;margin:12px 0 20px;border:1px solid #dfe7ff;border-radius:13px;background:rgba(244,247,255,.72)}.dataTools summary{cursor:pointer;color:#38549b;font-weight:700}.selectedStock{padding:13px;margin:10px 0 14px;border-radius:13px;background:#f2f5ff;color:#304675}
+.disciplineRadar{position:fixed;right:18px;bottom:18px;z-index:40;width:min(350px,calc(100vw - 36px));padding:13px 14px;border:1px solid rgba(255,255,255,.9);border-radius:16px;background:rgba(248,250,255,.96);box-shadow:0 16px 40px rgba(32,46,110,.22);backdrop-filter:blur(14px)}.radarHead{display:flex;width:100%;justify-content:space-between;align-items:center;border:0;background:none;color:#263f8a;font-weight:800;padding:0;cursor:pointer}.radarHead b{font-size:12px;color:#7c3aed}.radarMotto{margin:9px 0 6px;color:#4a57a5;font-size:13px;font-weight:650}.radarTop{margin:0;color:#77520a;font-size:12px}.disciplineRadar ul,.disciplineRadar>small{display:none}.disciplineRadar.open ul,.disciplineRadar.open>small{display:block}.disciplineRadar ul{max-height:210px;overflow:auto;list-style:none;padding:0;margin:9px 0}.disciplineRadar li{padding:7px 9px;margin:5px 0;border-radius:9px;font-size:12px}.disciplineRadar .warn{background:#fef3c7}.disciplineRadar .bad{background:#fee2e2}.disciplineRadar .ok{background:#dcfce7}
 .stat{font-size:25px;font-weight:750;color:#3046a4}.muted{color:#7e8eb5;font-size:12px;line-height:1.7;margin:6px 0 10px}.hint{color:#9aa6c2;font-size:12px;line-height:1.6;margin:4px 0 9px;padding-left:2px}.check{display:flex;gap:8px;align-items:center;padding:6px 0;color:#304675}.check input{width:auto;accent-color:#4f46e5}
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;overflow:hidden;border:1px solid #dfe7ff;border-radius:12px;background:rgba(255,255,255,.55)}th,td{border-bottom:1px solid #e7ecfa;padding:9px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{color:#526aa2;background:rgba(232,238,255,.7)}tr:last-child td{border-bottom:0}td input,td select{min-width:105px}
 .toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:linear-gradient(105deg,#1d4ed8,#6d28d9);color:white;padding:10px 15px;border-radius:12px;display:none;z-index:20;box-shadow:0 10px 28px rgba(37,50,140,.28)}
@@ -39,17 +41,18 @@ small{color:#7889b1}.small{padding:6px 10px;font-size:12px}
 .sidebar nav{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}.sideBottom{flex:0 0 auto}.volumeStatus,.autoCheck{display:flex;align-items:center;gap:12px;border:1px solid #d7e0fa;border-radius:14px;padding:12px 14px;margin:12px 0;background:rgba(255,255,255,.66)}.volumeStatus small,.autoCheck small{display:block;margin-top:3px}.volumeValue{display:grid;place-items:center;min-width:52px;height:42px;border-radius:11px;font-size:19px;font-weight:750;background:#edf2ff}.isContracting{border-color:#93c5fd;background:#eff6ff}.isExpanding{border-color:#c4b5fd;background:#f5f3ff}.isFlat{border-color:#fde68a;background:#fffbeb}.isUnknown{color:#7e8eb5}.autoCheck>span{font-size:18px;font-weight:800}
 .dashboardHero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 24px;margin-bottom:14px;color:white;border-radius:20px;background:linear-gradient(115deg,#123da8,#4f46e5 55%,#7c3aed);box-shadow:0 14px 36px rgba(55,48,163,.22)}.dashboardHero h2{color:white;font-size:25px;margin:2px 0 7px}.dashboardHero p{margin:0;opacity:.82}.eyebrow{font-size:11px;letter-spacing:1.6px}.readiness{min-width:108px;text-align:center;padding:13px;border:1px solid rgba(255,255,255,.25);border-radius:16px;background:rgba(255,255,255,.11)}.readiness strong{display:block;font-size:25px}.readiness span{font-size:11px;opacity:.78}.dashboardMetrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}.dashMetric{min-width:0;padding:14px;border:1px solid rgba(255,255,255,.82);border-radius:15px;background:var(--glass);box-shadow:0 8px 22px rgba(48,76,150,.08)}.dashMetric span{display:block;color:#7e8eb5;font-size:11px;margin-bottom:7px}.dashMetric strong{display:block;color:#253d87;font-size:17px;overflow-wrap:anywhere}.dashboardColumns{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:14px}.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.sectionHead h2,.sectionHead p{margin:0}.dashText{padding:10px 12px;margin:8px 0;border-left:3px solid #93c5fd;border-radius:0 10px 10px 0;background:rgba(239,246,255,.72)}.dashText.actionText{border-left-color:#8b5cf6;background:rgba(245,243,255,.78)}.dashText p{margin:3px 0;line-height:1.6;white-space:pre-wrap}.riskList{list-style:none;padding:0;margin:4px 0}.riskList li{padding:9px 11px;margin:7px 0;border-radius:10px}.riskList .ok{background:#dcfce7;color:#166534}.riskList .warn{background:#fef3c7;color:#92400e}.riskList .bad{background:#fee2e2;color:#991b1b}.quickNav{margin-top:0}td small{display:block;margin-top:3px}
 @media (max-width:1100px){.dashboardMetrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:820px){header{padding:11px 14px;min-height:64px}.headerTip{display:none}.brand{min-width:0}.headerMeta{margin-left:auto}.shell{min-height:calc(100vh - 64px)}.sidebar{width:190px;flex-basis:190px;top:64px;height:calc(100vh - 64px)}main{padding:16px 14px 80px}}
-@media (max-width:680px){.sidebar{width:68px;flex-basis:68px;padding:12px 7px}.sideTitle,.sideBottom{display:none}.sidebar nav button{font-size:0;text-align:center;padding:11px 4px}.sidebar nav button:before{content:attr(data-num);font-size:15px}.headerMeta{display:none}.brandMark{width:38px;height:38px}.brand h1{font-size:19px}.row>.btn{flex:1 1 auto}.tableWrap table{min-width:600px}.dashboardHero{align-items:flex-start;padding:17px;flex-direction:column}.readiness{width:100%;display:flex;align-items:center;justify-content:space-between}.readiness strong{font-size:20px}.dashboardMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardColumns{grid-template-columns:1fr}.sectionHead{align-items:flex-start;flex-wrap:wrap}}
+@media (max-width:820px){header{padding:11px 14px;min-height:64px}.headerTip{display:none}.brand{min-width:0}.headerMeta{margin-left:auto}.shell{min-height:calc(100vh - 64px)}.sidebar{width:190px;flex-basis:190px;top:64px;height:calc(100vh - 64px)}main{padding:16px 14px 110px}.homeDate{grid-template-columns:1fr}.homeDateActions{justify-content:flex-start}}
+@media (max-width:680px){.sidebar{width:68px;flex-basis:68px;padding:12px 7px}.sideTitle,.sideBottom{display:none}.sidebar nav button{font-size:0;text-align:center;padding:11px 4px}.sidebar nav button:before{content:attr(data-num);font-size:15px}.headerMeta{display:none}.brandMark{width:38px;height:38px}.brand h1{font-size:19px}.row>.btn{flex:1 1 auto}.tableWrap table{min-width:600px}.dashboardHero{align-items:flex-start;padding:17px;flex-direction:column}.readiness{width:100%;display:flex;align-items:center;justify-content:space-between}.readiness strong{font-size:20px}.dashboardMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardColumns,.twoCol{grid-template-columns:1fr}.sectionHead{align-items:flex-start;flex-wrap:wrap}.homeDateActions .btn{flex:1 1 140px}.disciplineRadar{right:10px;bottom:10px;width:calc(100vw - 88px)}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="brandMark">↗</div><div><h1>TradeOS</h1><div class="sub">记录 · 复盘 · 成长</div></div></div><div class="headerTip">✦ 好的交易，源于清晰的记录。</div><div class="headerMeta">A股 · V3.0.1 · 账户系统</div></header><div class="shell"><aside class="sidebar"><div class="sideTitle">交易SOP</div><nav id="nav"></nav><div class="sideBottom"><div>TradeOS</div><span>iPad 优先 · 本地存储</span></div></aside><main id="app"></main></div><div class="toast" id="toast"></div>
+<header><div class="brand"><div class="brandMark">↗</div><div><h1>TradeOS</h1><div class="sub">记录 · 复盘 · 成长</div></div></div><div class="headerTip">✦ 好的交易，源于清晰的记录。</div><div class="headerMeta">A股 · V3.1 · 纪律雷达版</div></header><div class="shell"><aside class="sidebar"><div class="sideTitle">交易SOP</div><nav id="nav"></nav><div class="sideBottom"><div>TradeOS</div><span>iPad 优先 · 本地存储</span></div></aside><main id="app"></main></div><div class="toast" id="toast"></div>
 <script>
 
 const STEPS=["交易日","◈ 今日驾驶舱","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计","⑬龙虎榜"];
 const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
 const models=["龙头高位横盘二波","强势板块延续","断板反包","强势板块补涨套利","大阳回踩","N字形走势","楔形/三角形","分时强弱","KDJ趋势","其他"];
+const DISCIPLINE_MOTTOS=["量能不足，谨慎追高。","先定主流板块，再判断情绪时机，最后寻找领涨个股。","拉升回踩再买，买确定性。","顺着情绪上升周期操作，避开退潮阶段。","成本不是市场的支撑位。","看好，不代表可以没有失效条件。"];
 let db, currentStep=0, selectedDayId=null, state={days:[],bloggers:[]};
 
 function showToast(t){let e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1600)}
@@ -57,13 +60,13 @@ function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.r
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 
 function save(){
- state.version='3.0.1';let d=day();if(d)d.updatedAt=new Date().toISOString();
- try{localStorage.setItem('tradeos_v3_0_1',JSON.stringify(state));return true}
+ state.version='3.1';let d=day();if(d)d.updatedAt=new Date().toISOString();
+ try{localStorage.setItem('tradeos_v3_1',JSON.stringify(state));return true}
  catch(e){showToast('保存失败，请立即导出完整备份：'+e.message);return false}
 }
 
 function load(){
- for(const key of ['tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
+ for(const key of ['tradeos_v3_1','tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
   const raw=localStorage.getItem(key);if(!raw)continue;
   try{state=migratePayload(JSON.parse(raw));return}catch(e){alert(key+' 读取失败，原数据未覆盖：'+e.message)}
  }
@@ -128,7 +131,7 @@ function render(){
  else if(currentStep===12)a.innerHTML=reviewPage(d);
  else if(currentStep===13)a.innerHTML=statsPage();
  else a.innerHTML=leaderboardPage(d);
- bind();
+ bind();renderDisciplineRadar(d);
 }
 function sectionArea(d,key,title,desc){let o=bindArea(d[key]);return wrap(title,`<p class="muted">${desc}</p><p class="hint">先写你的判断，不自动抓新闻；把“结论”和“风险”写成当天可复盘的具体判断。</p><div class="grid">${input(o,"conclusion","核心结论")} ${input(o,"rating","主观评级")} ${input(o,"risk","主要风险")}</div>${text(o,"notes","详细分析")}<button class="btn" onclick="save();showToast('已自动保存')">保存</button>`)}
 function marketPage(d){
@@ -146,7 +149,7 @@ function stockPage(d){
  return wrap("⑥ 个股 · 多股票池",`<p class="muted">一天可以记录多只候选/交易股票。交易模式属于“个股”，而不是卖出页面；卖出时选择股票即可自动继承。</p><p class="hint">建议把真正准备交易的股票分别建立档案。这样同一天研究多只股票时，不会覆盖前一只股票。</p><div class="row"><select onchange="selectStock(this.value)">${stocksOf(d).map(x=>`<option value="${x.id}" ${x.id===s.id?"selected":""}>${x.name||"未命名股票"} ${x.code?"· "+x.code:""}</option>`).join("")}</select><button class="btn" onclick="newStock()">＋添加股票</button><button class="btn danger" onclick="deleteStock('${s.id}')">删除当前股票</button></div><div class="grid">${input(o,"name","股票名称")} ${input(o,"code","代码")} ${input(o,"hot","同花顺热度榜排名","number")} ${select(o,"model","交易模式",models)}</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="leader" ${o.leader?"checked":""}>龙头/阶段领涨</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="ma" ${o.ma?"checked":""}>均线多头排列</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="limit10" ${o.limit10?"checked":""}>10日内有涨停</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="board2" ${o.board2?"checked":""}>二板以上</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="sectorStrong" ${o.sectorStrong?"checked":""}>处于强势板块</div><div class="check"><input type="checkbox" data-area="${o._id}" data-key="top100" ${o.top100?"checked":""}>热度榜 Top 100（排名≤100）</div>${text(o,"notes","个股判断")}<button class="btn" onclick="save();showToast('当前股票已保存')">保存当前股票</button><h3>今日股票清单</h3><div class="tableWrap"><table><tr><th>股票</th><th>代码</th><th>交易模式</th><th>热度</th><th>状态</th></tr>${stocksOf(d).map(x=>`<tr><td><button class="btn alt small" onclick="selectStock('${x.id}')">${x.name||"未命名"}</button></td><td>${x.code||"—"}</td><td>${x.model||"—"}</td><td>${x.hot||"—"}</td><td>${x.id===s.id?"当前": ""}</td></tr>`).join("")}</table></div>`)
 }
 function buyPage(d){let s=currentStock(d);if(!s)return wrap("⑦ 买点",`<p class="muted">请先在⑥个股建立股票档案。买点必须绑定具体股票，避免多只股票互相覆盖。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.buy);let selected=`<b>${s.name||"未命名股票"}</b> · ${s.code||""} · 模式：<span class="pill">${s.model||"尚未设置"}</span>`;return wrap("⑦ 买点 · 当前股票",`<p class="muted">每只股票拥有独立买点。切换⑥个股中的股票后，这里的买点也会随之切换。</p><p class="hint">交易模式来自⑥个股；这里不重复填写模式，只记录这只股票具体在哪里、为什么买。</p><div class="card"><label>当前股票</label><div>${selected}</div></div>${select(o,"phase","买入情绪阶段",phases)}<div class="grid">${input(o,"price","计划买入价","number")} ${input(o,"planStop","计划止损","number")} ${input(o,"confidence","确定性评分","number")}</div>${text(o,"notes","买入逻辑")}${text(o,"invalidWhen","计划失效条件")}${text(o,"pendingActions","待执行动作")}${input(o,"takeProfit","计划止盈价","number")}${text(o,"changeReason","本次计划调整原因")}<button class="btn" onclick="save();showToast('当前股票买点已保存')">保存</button>`)}
-function positionPage(d){let s=currentStock(d);if(!s)return wrap("⑧ 仓位",`<p class="muted">请先在⑥个股建立股票档案。仓位与具体股票绑定。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.position);return wrap("⑧ 仓位 · 当前股票",`<p class="muted">每只股票拥有独立的计划仓位、实际仓位和仓位理由。</p><p class="hint">切换股票后，仓位数据同步切换；不会再出现上一只股票覆盖下一只股票的问题。</p><div class="card"><label>当前股票</label><div><b>${s.name||"未命名股票"}</b> · ${s.code||""} · 模式：<span class="pill">${s.model||"尚未设置"}</span></div></div><div class="grid">${input(o,"plan","计划仓位 %","number")} ${input(o,"actual","实际仓位 %","number")}</div>${text(o,"reason","仓位理由")}<button class="btn" onclick="save();showToast('当前股票仓位已保存')">保存</button>`)}
+function positionPage(d){let s=currentStock(d),r=bindArea(d.aiPlan);if(!s)return wrap("⑧ 仓位",`<h3>今日风险边界</h3><div class="twoCol">${input(r,'maxPositionPct','今日仓位上限 %','number')}${input(r,'maxLossPct','今日可接受亏损上限 %','number')}</div><p class="muted">请先在⑥个股建立股票档案。仓位与具体股票绑定。</p><button class="btn" onclick="goStep(7)">去⑥个股添加股票</button>`);let o=bindArea(s.position);return wrap("⑧ 仓位 · 当前股票",`<h3>今日风险边界</h3><div class="twoCol">${input(r,'maxPositionPct','今日仓位上限 %','number')}${input(r,'maxLossPct','今日可接受亏损上限 %','number')}</div><p class="muted">每只股票拥有独立的计划仓位、实际仓位和仓位理由。</p><div class="selectedStock"><label>当前股票</label><b>${esc(s.name||"未命名股票")}</b> · ${esc(s.code||"")} · 模式：<span class="pill">${esc(s.model||"尚未设置")}</span></div><div class="twoCol">${input(o,"plan","计划仓位 %","number")} ${input(o,"actual","实际仓位 %","number")}</div>${text(o,"reason","仓位理由")}<button class="btn" onclick="save();showToast('当前股票仓位已保存')">保存</button>`)}
 
 
 function n(v){let x=Number(v);return Number.isFinite(x)?x:0}
@@ -351,7 +354,7 @@ function statsPage(){
    if(!bloggerRows)bloggerRows='<tr><td colspan="4">尚无记录</td></tr>';
 
    return wrap("⑫ 统计中心",
-     '<p class="muted">V3.0.1：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
+     '<p class="muted">V3.1：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
      '<h3>账户收益</h3>'+
      '<div class="grid">'+
        '<div class="card"><div class="stat">'+(last?yuan(last.equity):"—")+'</div><div class="muted">最新账户权益</div></div>'+
@@ -466,10 +469,10 @@ function migratePayload(p){
  }else byDate.set(d.date,d)}
  const days=[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date));
  const ids=new Set();days.forEach(d=>{if(ids.has(d.id))d.id=id();ids.add(d.id)});
- return {...p,version:'3.0.1',days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
+ return {...p,version:'3.1',days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
 }
 
-function exportData(){downloadJSON({...state,version:'3.0.1',exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
+function exportData(){downloadJSON({...state,version:'3.1',exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
 
 function importData(){
  const i=document.createElement('input');i.type='file';i.accept='.json';
@@ -527,28 +530,30 @@ function changeDate(value){
 }
 function dayPage(d){
  const o=bindArea(d.aiPlan);
- return wrap('交易日档案 · V3.0.1',`
- <div class="grid"><div><label>当前交易日（北京时间）</label><input type="date" value="${d.date}" onchange="changeDate(this.value)"></div><div><label>创建时间</label><p>${esc(d.createdAt?new Date(d.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'旧档案未记录')}</p></div><div><label>最近保存</label><p>${esc(d.updatedAt?new Date(d.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'尚未记录')}</p></div></div>
- <p class="hint">每个日期一份档案；新建按钮打开或建立北京时间今天的记录。日期不自动判断交易所节假日。</p>
- <div class="row"><button class="btn" onclick="newDay()">＋新建／打开今日</button><button class="btn alt" onclick="exportData()">导出完整备份</button><button class="btn alt" onclick="importData()">导入完整备份</button></div>
- <h3>AI 分析 JSON</h3><p class="hint">自动整理当前记录，发给另一个对话使用。AI 文件不能用于恢复软件；行情时间请按实际记录填写。</p>
- <div class="grid">${select(o,'session','分析时段',['盘前','盘中','盘后'])}${input(o,'asOf','本次数据截至（北京时间）','datetime-local')}${input(o,'maxPositionPct','今日仓位上限 %','number')}${input(o,'maxLossPct','今日可接受亏损上限 %','number')}</div>
- ${text(o,'expectation','市场预期')}${text(o,'actions','账户待执行计划')}${text(o,'questions','想让 AI 回答的问题')}
- <button class="btn" onclick="exportAI()">导出 AI 分析 JSON</button>
- <div class="row"><button class="btn alt" onclick="prevDay()">← 上一天</button><button class="btn alt" onclick="nextDay()">下一天 →</button></div>
+ return wrap('交易日档案 · V3.1',`
+ <section class="homeDate"><div><label>当前交易日（北京时间）</label><input type="date" value="${d.date}" onchange="changeDate(this.value)"></div><div class="homeDateActions"><button class="btn" onclick="newDay()">＋新建／打开今日</button><button class="btn alt" onclick="prevDay()">← 上一天</button><button class="btn alt" onclick="nextDay()">下一天 →</button></div></section>
+ <div class="metaStrip"><span>创建：${esc(d.createdAt?new Date(d.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'旧档案未记录')}</span><span>最近保存：${esc(d.updatedAt?new Date(d.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'尚未记录')}</span></div>
+ <section class="homePanel"><h3>AI 分析 JSON</h3><p class="hint">选择分析时段和数据时间后导出。仓位与亏损上限移到⑧仓位统一维护。</p><div class="twoCol">${select(o,'session','分析时段',['盘前','盘中','盘后'])}${input(o,'asOf','本次数据截至（北京时间）','datetime-local')}</div>${text(o,'questions','想让 AI 回答的问题')}<button class="btn" onclick="exportAI()">导出 AI 分析 JSON</button></section>
+ <details class="dataTools"><summary>数据管理（备份／导入）</summary><p class="hint">公开 GitHub 仓库不要上传导出的 JSON。</p><button class="btn alt" onclick="exportData()">导出完整备份</button><button class="btn alt" onclick="importData()">导入完整备份</button></details>
  <h3>历史交易日</h3><div class="tableWrap"><table><tr><th>日期</th><th>情绪</th><th>市场判断</th><th>交易笔数</th><th>操作</th></tr>${state.days.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.emotion.phase||'—')}</td><td>${esc(x.market.final||'—')}</td><td>${x.trades.length}</td><td><button class="btn small" onclick="selectDay('${x.id}')">查看</button><button class="btn danger small" onclick="deleteDay('${x.id}')">删除</button></td></tr>`).join('')}</table></div>`);
 }
 function dashboardWarnings(d,s){
  const out=[],m=d.market||{},phase=d.emotion.phase||'',limit=nullable(d.aiPlan.maxPositionPct);
  if(!m.final)out.push({level:'warn',text:'尚未填写最终市场状态'});
+ const energy=volumeEnergy(m);if(energy.value!==null&&energy.value<1)out.push({level:'warn',text:'量能不足，谨慎追高，等待回踩确认'});
  if(['退潮','冰点'].includes(phase))out.push({level:'bad',text:'情绪处于'+phase+'，按SOP不应新开仓'});
  const riskLabels={tech:'科技板块集体大跌',stagnant:'高量滞涨',up800:'上涨家数少于800',kill:'高位人气票批量跌停'};
  Object.keys(riskLabels).forEach(k=>{if(m[k])out.push({level:'bad',text:riskLabels[k]})});
  if(limit!==null&&nullable(s.positionPct)!==null&&s.positionPct>limit)out.push({level:'bad',text:'当前仓位 '+s.positionPct.toFixed(1)+'% 已超过今日上限 '+limit+'%'});
  (d.holdings||[]).forEach(h=>{const name=h.name||h.code||'未命名持仓';if(nullable(h.price)===null)out.push({level:'warn',text:name+' 缺少最新价格'});if(nullable(h.availableQty)===null)out.push({level:'warn',text:name+' 尚未核对可卖数量'});const st=d.stocks.find(x=>x.id===h.stockId);if(nullable(st?.buy?.planStop)===null)out.push({level:'warn',text:name+' 尚未设置当前止损'});});
  if(!d.aiPlan.actions)out.push({level:'warn',text:'尚未填写账户待执行计划'});
+ if(stocksOf(d).length&&!d.sector.name)out.push({level:'warn',text:'已有候选股，但主流板块尚未确认'});
+ stocksOf(d).forEach(st=>{const name=st.name||st.code||'未命名候选股';if(nullable(st.hot)!==null&&nullable(st.hot)>100)out.push({level:'warn',text:name+' 热度排名超过100，谨慎作为核心候选'});if(!st.model)out.push({level:'warn',text:name+' 尚未选择交易模式'});if(!st.buy.invalidWhen)out.push({level:'warn',text:name+' 尚未写明计划失效条件'})});
  return out;
 }
+function dailyMotto(d){const key=d?.date||today();return DISCIPLINE_MOTTOS[[...key].reduce((n,c)=>n+c.charCodeAt(0),0)%DISCIPLINE_MOTTOS.length]}
+function toggleRadar(){const el=document.getElementById('disciplineRadar');if(el)el.classList.toggle('open')}
+function renderDisciplineRadar(d){let el=document.getElementById('disciplineRadar');if(!el){el=document.createElement('aside');el.id='disciplineRadar';el.className='disciplineRadar';document.body.appendChild(el)}const alerts=dashboardWarnings(d,recomputeAccount(d)),top=alerts[0]?.text||'当前记录未发现明显纪律警报';el.innerHTML=`<button class="radarHead" onclick="toggleRadar()"><span>纪律雷达</span><b>${alerts.length?alerts.length+' 条提醒':'状态平稳'}</b></button><p class="radarMotto">“${esc(dailyMotto(d))}”</p><p class="radarTop">${esc(top)}</p><ul>${alerts.map(x=>`<li class="${x.level}">${esc(x.text)}</li>`).join('')||'<li class="ok">保持按计划执行</li>'}</ul><small>提醒不会阻止保存或交易记录。</small>`}
 function dashboardPage(d){
  const s=recomputeAccount(d),energy=volumeEnergy(d.market),warnings=dashboardWarnings(d,s),fresh=d.aiPlan.asOf||d.market.asOf||'',ready=[d.market.final,d.emotion.phase,d.sector.name,d.aiPlan.actions].filter(Boolean).length;
  const holdings=(d.holdings||[]).map(h=>{const st=d.stocks.find(x=>x.id===h.stockId),price=nullable(h.price),cost=nullable(h.cost),ret=cost>0&&price!==null?(price-cost)/cost*100:null,plan=planOf(st);return `<tr><td><b>${esc(h.name||'—')}</b><small>${esc(h.code||'')}</small></td><td>${percent(ret)}</td><td>${nullable(h.availableQty)===null?'待核对':esc(h.availableQty)}</td><td>${plan?.stopLoss??'—'}</td><td>${plan?.takeProfit??'—'}</td><td>${esc(h.assessment||'—')}</td><td>${esc(h.adviceStatus||'—')}</td></tr>`}).join('')||'<tr><td colspan="7">当前无持仓</td></tr>';
@@ -579,7 +584,7 @@ function updateVolumeDisplay(o){
 }
 function planOf(s){return s?{tradeMode:s.model||null,buyReason:s.buy.notes||null,entry:nullable(s.buy.price),stopLoss:nullable(s.buy.planStop),takeProfit:nullable(s.buy.takeProfit),positionPct:nullable(s.position.plan),invalidWhen:s.buy.invalidWhen||null,pendingActions:s.buy.pendingActions||null}:null}
 function holdingDetails(d){
- return d.holdings.map(h=>{bindArea(h);return `<div class="card"><h3>${esc(h.name||h.code||'持仓')} · 计划与价格时间</h3><div class="grid">${input(h,'availableQty','当前可卖数量（未知留空）','number')}${input(h,'priceAsOf','价格截至（北京时间）','datetime-local')}${input(h,'previousClose','上一交易日收盘价','number')}${input(h,'sector','所属板块')}${select(h,'exchange','交易所',['SSE','SZSE','BSE'])}</div><p class="hint">最初买入计划：${h.originalPlan?'已锁定建仓快照':'旧记录缺失，未自动推断'}。当前计划在⑥～⑧维护。</p>${text(h,'assessment','当前持仓判断')}${text(h,'lastAdvice','最近一次 AI 建议（手动粘贴，可选）')}${select(h,'adviceStatus','建议状态',['未采纳','已采纳','已失效'])}</div>`}).join('');
+ return d.holdings.map(h=>{bindArea(h);return `<div class="card"><h3>${esc(h.name||h.code||'持仓')} · 计划与价格时间</h3><div class="grid">${input(h,'availableQty','当前可卖数量（未知留空）','number')}${input(h,'priceAsOf','价格截至（北京时间）','datetime-local')}${input(h,'previousClose','上一交易日收盘价','number')}${input(h,'sector','所属板块')}</div><p class="hint">最初买入计划：${h.originalPlan?'已锁定建仓快照':'旧记录缺失，未自动推断'}。当前计划在⑥～⑧维护。</p>${text(h,'assessment','当前持仓判断')}${text(h,'lastAdvice','最近一次 AI 建议（手动粘贴，可选）')}${select(h,'adviceStatus','建议状态',['未采纳','已采纳','已失效'])}</div>`}).join('');
 }
 function timestamp(v){return v?(v.includes('Z')||/[+-]\d\d:\d\d$/.test(v)?v:v+':00+08:00'):null}
 function buildAI(d){
@@ -588,7 +593,7 @@ function buildAI(d){
  const knownPrices=d.holdings.every(h=>nullable(h.qty)!==null&&nullable(h.price)!==null);
  const mv=knownPrices?holdingCalc(d).marketValue:null,equity=mv!==null&&cash!==null?mv+cash:null;
  if(cash===null)missing.push('account.cash');if(!d.aiPlan.asOf)missing.push('meta.dataAsOf');
- const snapshot={meta:{schemaVersion:'1.1',appVersion:'3.0.1',exportId:id(),exportType:'analysis_snapshot',tradeDate:d.date,exportedAt:new Date().toISOString(),timezone:'Asia/Shanghai',session:({'盘前':'pre_market','盘中':'intraday','盘后':'post_market'})[d.aiPlan.session]||null,dataAsOf:timestamp(d.aiPlan.asOf),units:{money:'CNY',quantity:'shares',percentage:'35 means 35%'},source:'manual_records_and_calculations',requestType:'full_analysis'},
+ const snapshot={meta:{schemaVersion:'1.1',appVersion:'3.1',exportId:id(),exportType:'analysis_snapshot',tradeDate:d.date,exportedAt:new Date().toISOString(),timezone:'Asia/Shanghai',session:({'盘前':'pre_market','盘中':'intraday','盘后':'post_market'})[d.aiPlan.session]||null,dataAsOf:timestamp(d.aiPlan.asOf),units:{money:'CNY',quantity:'shares',percentage:'35 means 35%'},source:'manual_records_and_calculations',requestType:'full_analysis'},
  account:{cash,totalEquity:equity,totalPositionPct:equity>0?mv/equity*100:null,availableCashPct:equity>0?cash/equity*100:null,maxPositionPctToday:nullable(d.aiPlan.maxPositionPct),maxAcceptableLossPctToday:nullable(d.aiPlan.maxLossPct)},
  macro:clean(d.macro),market:{userAssessment:market,asOf:timestamp(d.market.asOf),derived:{volumeEnergy:volumeEnergy(d.market)}},trend:clean(d.trend),emotion:clean(d.emotion),sectors:[clean(d.sector)],
  holdings:d.holdings.map(h=>{
