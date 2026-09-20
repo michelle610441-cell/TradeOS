@@ -1,22 +1,22 @@
 
-const STEPS=["交易日","◈ 今日驾驶舱","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计","⑬龙虎榜"];
+const STEPS=["交易日","◈ 今日驾驶舱","①宏观","②大盘","③大势","④情绪","⑤板块","⑥个股","⑦买点","⑧仓位","⑨持仓","⑩卖出","⑪复盘/博主","⑫统计","⑬龙虎榜","战法库","盘前候选","⚡极速决策","20笔挑战"];
 const phases=["启动","加速","高潮","分歧","退潮","冰点","修复"];
 const models=["龙头高位横盘二波","强势板块延续","断板反包","强势板块补涨套利","大阳回踩","N字形走势","楔形/三角形","分时强弱","KDJ趋势","其他"];
 const DISCIPLINE_MOTTOS=["量能不足，谨慎追高。","先定主流板块，再判断情绪时机，最后寻找领涨个股。","拉升回踩再买，买确定性。","顺着情绪上升周期操作，避开退潮阶段。","成本不是市场的支撑位。","看好，不代表可以没有失效条件。"];
-let db, currentStep=0, selectedDayId=null, state={days:[],bloggers:[]};
+let db, currentStep=0, selectedDayId=null, selectedSetupId=null, state={days:[],bloggers:[],setupLibrary:[],tradeCases:[],disciplineChallenges:[],settings:{experimentMaxPositionPct:5,experimentPromotionCases:5}};
 
 function showToast(t){let e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1600)}
 function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 
 function save(){
- state.version='3.1';let d=day();if(d)d.updatedAt=new Date().toISOString();
- try{localStorage.setItem('tradeos_v3_1',JSON.stringify(state));return true}
+ state.version='4.0';state.dataSchemaVersion=2;let d=day();if(d)d.updatedAt=new Date().toISOString();
+ try{localStorage.setItem('tradeos_v4_0',JSON.stringify(state));return true}
  catch(e){showToast('保存失败，请立即导出完整备份：'+e.message);return false}
 }
 
 function load(){
- for(const key of ['tradeos_v3_1','tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
+ for(const key of ['tradeos_v4_0','tradeos_v3_1','tradeos_v3_0_1','tradeos_v3_0','tradeos_v2_9','tradeos_v2_8','tradeos_v2_7_1','tradeos_v2_7','tradeos_v2_6_complete','tradeos_v2','tradeos_v1']){
   const raw=localStorage.getItem(key);if(!raw)continue;
   try{state=migratePayload(JSON.parse(raw));return}catch(e){alert(key+' 读取失败，原数据未覆盖：'+e.message)}
  }
@@ -65,7 +65,7 @@ function stockModel(id){let d=day(),s=stocksOf(d).find(x=>x.id===id);return s?.m
 function changeTradeModel(i,val){let d=day(),t=(d.trades||[])[i];if(t){t.model=val;t.modelEdited=true;save();render()}}
 function render(){
  nav(); ensure(); let d=day(), a=document.getElementById("app");
- if(!d){a.innerHTML=wrap('交易日档案','<p>尚无交易日记录。</p><button class="btn" onclick="newDay()">建立今日档案</button><button class="btn alt" onclick="importData()">导入完整备份</button><button class="btn alt" onclick="exportData()">导出完整备份</button>');return}
+ if(!d){a.innerHTML=wrap('交易日档案 · V4.0','<p>盘前想慢，盘中动快，盘后想透。</p><p>尚无交易日记录。</p><button class="btn" onclick="newDay()">建立今日档案</button><button class="btn alt" onclick="importData()">导入完整备份</button><button class="btn alt" onclick="exportData()">导出完整备份</button>');document.body.classList.remove('fast-mode');renderDisciplineRadar(null);return}
  if(currentStep===0)a.innerHTML=dayPage(d);
  else if(currentStep===1)a.innerHTML=dashboardPage(d);
  else if(currentStep===2)a.innerHTML=sectionArea(d,"macro","① 宏观","宏观环境、政策、流动性、外围市场与自己的判断。");
@@ -80,8 +80,12 @@ function render(){
  else if(currentStep===11)a.innerHTML=sellPage(d);
  else if(currentStep===12)a.innerHTML=reviewPage(d);
  else if(currentStep===13)a.innerHTML=statsPage();
- else a.innerHTML=leaderboardPage(d);
- bind();renderDisciplineRadar(d);
+ else if(currentStep===14)a.innerHTML=leaderboardPage(d);
+ else if(currentStep===15)a.innerHTML=setupLibraryPage();
+ else if(currentStep===16)a.innerHTML=candidatePoolPage(d);
+ else if(currentStep===17)a.innerHTML=fastExecutionPage(d);
+ else a.innerHTML=disciplineChallengePage(d);
+ bind();mountV4(d);renderDisciplineRadar(d);
 }
 function sectionArea(d,key,title,desc){let o=bindArea(d[key]);return wrap(title,`<p class="muted">${desc}</p><p class="hint">先写你的判断，不自动抓新闻；把“结论”和“风险”写成当天可复盘的具体判断。</p><div class="grid">${input(o,"conclusion","核心结论")} ${input(o,"rating","主观评级")} ${input(o,"risk","主要风险")}</div>${text(o,"notes","详细分析")}<button class="btn" onclick="save();showToast('已自动保存')">保存</button>`)}
 function marketPage(d){
@@ -125,44 +129,6 @@ function findHoldingStockOptions(d){
  (d.holdings||[]).forEach(h=>{if(!seen.has(h.stockId)){seen.add(h.stockId);arr.push({id:h.stockId,name:h.name,code:h.code})}});
  stocksOf(d).forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);arr.push(s)}});
  return arr
-}
-function recordLedger(type){
- let d=day(),sid=document.getElementById("lg_stock")?.value;
- let qty=n(document.getElementById("lg_qty")?.value),price=n(document.getElementById("lg_price")?.value),fee=n(document.getElementById("lg_fee")?.value),note=document.getElementById("lg_note")?.value||"";
- let srcStock=findHoldingStockOptions(d).find(x=>x.id===sid);
- if(type==='清仓')qty=n(d.holdings.find(x=>x.stockId===sid)?.qty);
- if(!srcStock||qty<=0||price<=0){showToast("请填写股票、股数和成交价");return}
- let h=(d.holdings||[]).find(x=>x.stockId===sid),realizedPnl=0;
- if(!Number.isInteger(qty)||fee<0){showToast('股数必须为正整数，手续费不能为负');return}
- if(nullable(d.account.cash)===null){showToast('请先填写当前现金');return}
- if((type==='买入'||type==='加仓')&&qty*price+fee>n(d.account.cash)){showToast('当前现金不足');return}
- if(type==='清仓'&&h)qty=n(h.qty);
- if((type==='减仓'||type==='清仓')&&h){
-  if(nullable(h.availableQty)===null){showToast('请先核对并填写该持仓的可卖数量');return}
-  if(qty>n(h.availableQty)){showToast('卖出数量超过可卖数量');return}
- }
- const undoBefore={holdings:clone(d.holdings),account:clone(d.account)};
- if(type==="买入"||type==="加仓"){
-   if(!h){h={id:id(),stockId:sid,name:srcStock.name||"",code:srcStock.code||"",qty:0,cost:0,price:price,availableQty:0,originalPlan:{...planOf(d.stocks.find(s=>s.id===sid)),capturedAt:new Date().toISOString()}};d.holdings.push(h)}
-   let oq=n(h.qty),oc=n(h.cost),nq=oq+qty;
-   h.cost=nq?((oq*oc)+(qty*price)+fee)/nq:0;h.qty=nq;h.price=price;
-   d.account.cash=n(d.account.cash)-(qty*price+fee)
- }else{
-   if(!h||qty>n(h.qty)){showToast("卖出数量超过当前持仓");return}
-   h.availableQty=n(h.availableQty)-qty;realizedPnl=(price-n(h.cost))*qty-fee;h.qty=n(h.qty)-qty;h.price=price;
-   d.account.cash=n(d.account.cash)+(qty*price-fee)
- }
- h.priceUpdatedAt=new Date().toISOString();h.priceAsOf=null;
- d.ledger.push({undoBefore,id:id(),date:d.date,type,stockId:sid,name:srcStock.name||h?.name||"",code:srcStock.code||h?.code||"",qty,price,fee,amount:qty*price,realizedPnl,note,createdAt:new Date().toISOString()});
- d.holdings=d.holdings.filter(x=>n(x.qty)>0);d.ledger[d.ledger.length-1].undoAfter={holdings:clone(d.holdings),account:clone(d.account)};recomputeAccount(d);save();showToast(type+"已记录");render()
-}
-function deleteLedger(i){
- const d=day(),t=d.ledger[i];
- if(i!==d.ledger.length-1||!t?.undoBefore){showToast('仅支持撤销本版本新增的最后一条流水；旧流水保留以避免账户失真');return}
- const current={holdings:clone(d.holdings),account:clone(d.account)};
- if(JSON.stringify(clean(current))!==JSON.stringify(clean(t.undoAfter))){showToast('流水后账户或持仓已修改，无法安全撤销，请先恢复对应状态');return}
- if(!confirm('撤销这条流水，同时恢复交易前的现金和持仓？'))return;
- d.holdings=clone(t.undoBefore.holdings);d.account=clone(t.undoBefore.account);d.ledger.pop();recomputeAccount(d);save();render();
 }
 
 function saveAccountSnapshot(){let d=day();let s=recomputeAccount(d);if(s.equity===null){showToast('请补齐当前现金和持仓价格后保存快照');return}s.savedAt=new Date().toISOString();save();showToast("今日账户快照已保存");render()}
@@ -304,7 +270,7 @@ function statsPage(){
    if(!bloggerRows)bloggerRows='<tr><td colspan="4">尚无记录</td></tr>';
 
    return wrap("⑫ 统计中心",
-     '<p class="muted">V3.1：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
+     '<p class="muted">V4.0：历史交易按实际记录统计；账户曲线使用已保存快照。</p>'+
      '<h3>账户收益</h3>'+
      '<div class="grid">'+
        '<div class="card"><div class="stat">'+(last?yuan(last.equity):"—")+'</div><div class="muted">最新账户权益</div></div>'+
@@ -382,6 +348,10 @@ function normalizeDay(raw){
   if(d[k]!=null&&!Array.isArray(d[k]))throw Error(k+' 应为数组');
   d[k]=(d[k]||[]).filter(x=>x&&typeof x==='object');
  }
+ for(const k of ['candidatePool','executionDecisions']){
+  if(d[k]!=null&&!Array.isArray(d[k]))throw Error(k+' 应为数组');
+  d[k]=(d[k]||[]).filter(x=>x&&typeof x==='object');
+ }
  if(!d.stocks.length&&d.stock&&Object.keys(d.stock).some(k=>k!=='_id'&&d.stock[k]))d.stocks=[{...d.stock,buy:clone(d.buy),position:clone(d.position)}];
  d.stocks.forEach(st=>{st.id=st.id||id();st.buy=object(st.buy);st.position=object(st.position);st.model=st.model||st.buy.model||''});
  d.currentStockId=d.currentStockId||d.stocks[0]?.id||null;
@@ -407,6 +377,9 @@ function normalizeDay(raw){
 
 function migratePayload(p){
  if(!p||typeof p!=='object'||Array.isArray(p)||p.meta?.schemaVersion)throw Error('请选择完整备份，AI分析文件不能用于恢复');
+ if(p.dataSchemaVersion>2)throw Error('该备份来自更高数据版本，请勿降级导入');
+ for(const k of ['setupLibrary','tradeCases','disciplineChallenges','auditEvents'])if(p[k]!=null&&!Array.isArray(p[k]))throw Error(k+' 应为数组，原数据未覆盖');
+ p=clone(p);
  let raw;
  if(Array.isArray(p.days))raw=p.days;
  else if(p.current||Array.isArray(p.archive))raw=[...(p.current?[p.current]:[]),...(p.archive||[])];
@@ -419,10 +392,16 @@ function migratePayload(p){
  }else byDate.set(d.date,d)}
  const days=[...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date));
  const ids=new Set();days.forEach(d=>{if(ids.has(d.id))d.id=id();ids.add(d.id)});
- return {...p,version:'3.1',days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
+ const next={...p,version:'4.0',dataSchemaVersion:2,days,bloggers:Array.isArray(p.bloggers)?p.bloggers:[],duplicateArchive:duplicates};
+ next.setupLibrary=Array.isArray(p.setupLibrary)?p.setupLibrary:models.map((name,i)=>({id:'legacy-setup-'+(i+1),name,type:name.includes('龙头')?'龙头战法':'传统模式',status:'legacy_needs_definition',currentVersion:1,createdAt:new Date().toISOString(),versions:[{version:1,effectiveAt:new Date().toISOString(),marketConditions:'',emotionPhases:[],sectorConditions:'',stockRoleConditions:'',priceVolumeConditions:'',intradayConditions:'',entryTriggers:[],forbiddenConditions:[],initialPositionPct:null,maxPositionPct:null,addPositionConditions:'',invalidationConditions:'',exitRules:'',fastChecks:[],historicalCases:[],notes:'由旧交易模式自动建立，尚未补充完整规则。'}]}));
+ next.tradeCases=Array.isArray(p.tradeCases)?p.tradeCases:[];
+ next.disciplineChallenges=Array.isArray(p.disciplineChallenges)?p.disciplineChallenges:[];
+ next.settings={experimentMaxPositionPct:5,experimentPromotionCases:5,...object(p.settings)};
+ next.days.forEach(d=>{d.stocks.forEach(st=>{if(!st.setupId){const setup=next.setupLibrary.find(x=>x.name===st.model);if(setup)st.setupId=setup.id}});d.trades.forEach(t=>{if(!t.classification)t.classification='legacy_unclassified'})});
+ return migrateV4(next);
 }
 
-function exportData(){downloadJSON({...state,version:'3.1',exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
+function exportData(){downloadJSON({...state,version:'4.0',dataSchemaVersion:2,exportedAt:new Date().toISOString()},'TradeOS-backup-'+today()+'.json')}
 
 function importData(){
  const i=document.createElement('input');i.type='file';i.accept='.json';
@@ -440,7 +419,7 @@ function object(x){return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
 function nullable(v){return v===null||v===undefined||String(v).trim()===''?null:(Number.isFinite(Number(v))?Number(v):null)}
 function clean(x){
  if(Array.isArray(x))return x.map(clean);
- if(x&&typeof x==='object')return Object.fromEntries(Object.entries(x).filter(([k])=>!['_id','_editBatch','currentStockId','__name','undoBefore','undoAfter'].includes(k)).map(([k,v])=>[k,clean(v)]));
+ if(x&&typeof x==='object')return Object.fromEntries(Object.entries(x).filter(([k])=>!['_id','_editBatch','currentStockId','__name','undoBefore','undoAfter','researchBefore','researchAfter'].includes(k)).map(([k,v])=>[k,clean(v)]));
  return x===''?null:x;
 }
 function mergeDay(a,b){
@@ -456,6 +435,9 @@ function mergeDay(a,b){
   return x;
  }
  const d=merge(a,b);d.id=a.id;
+ for(const key of ['candidatePool','executionDecisions']){
+  const items=new Map();[...(a[key]||[]),...(b[key]||[])].forEach(x=>{const k=x.id||JSON.stringify(x);if(!items.has(k))items.set(k,clone(x))});d[key]=[...items.values()];
+ }
  // Holdings are account snapshots, never concatenate two snapshots of the same date.
  d.holdings=clone(a.holdings.length?a.holdings:b.holdings);
  d.stocks=clone(a.stocks);
@@ -468,6 +450,7 @@ function downloadJSON(payload,name){
 }
 function deleteDay(dayId){
  const d=state.days.find(d=>d.id===dayId);if(!d)return;
+ if(d.executionDecisions?.length||d.ledger.some(l=>l.tradeCaseId)){showToast('该日包含锁定票据或关联案例，不直接删除；请保留研究链，误记流水用撤销');return}
  if(!confirm('删除 '+d.date+' 的全部记录？其他日期的持仓快照不会联动修改。'))return;
  if(!confirm('再次确认删除？建议先导出完整备份。'))return;
  state.days=state.days.filter(d=>d.id!==dayId);selectedDayId=state.days[0]?.id||null;save();render();
@@ -480,7 +463,7 @@ function changeDate(value){
 }
 function dayPage(d){
  const o=bindArea(d.aiPlan);
- return wrap('交易日档案 · V3.1',`
+ return wrap('交易日档案 · V4.0',`
  <section class="homeDate"><div><label>当前交易日（北京时间）</label><input type="date" value="${d.date}" onchange="changeDate(this.value)"></div><div class="homeDateActions"><button class="btn" onclick="newDay()">＋新建／打开今日</button><button class="btn alt" onclick="prevDay()">← 上一天</button><button class="btn alt" onclick="nextDay()">下一天 →</button></div></section>
  <div class="metaStrip"><span>创建：${esc(d.createdAt?new Date(d.createdAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'旧档案未记录')}</span><span>最近保存：${esc(d.updatedAt?new Date(d.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'尚未记录')}</span></div>
  <section class="homePanel"><h3>AI 分析 JSON</h3><p class="hint">选择分析时段和数据时间后导出。仓位与亏损上限移到⑧仓位统一维护。</p><div class="twoCol">${select(o,'session','分析时段',['盘前','盘中','盘后'])}${input(o,'asOf','本次数据截至（北京时间）','datetime-local')}</div>${text(o,'questions','想让 AI 回答的问题')}<button class="btn" onclick="exportAI()">导出 AI 分析 JSON</button></section>
@@ -502,8 +485,6 @@ function dashboardWarnings(d,s){
  return out;
 }
 function dailyMotto(d){const key=d?.date||today();return DISCIPLINE_MOTTOS[[...key].reduce((n,c)=>n+c.charCodeAt(0),0)%DISCIPLINE_MOTTOS.length]}
-function toggleRadar(){const el=document.getElementById('disciplineRadar');if(el)el.classList.toggle('open')}
-function renderDisciplineRadar(d){let el=document.getElementById('disciplineRadar');if(!el){el=document.createElement('aside');el.id='disciplineRadar';el.className='disciplineRadar';document.body.appendChild(el)}const alerts=dashboardWarnings(d,recomputeAccount(d)),top=alerts[0]?.text||'当前记录未发现明显纪律警报';el.innerHTML=`<button class="radarHead" onclick="toggleRadar()"><span>纪律雷达</span><b>${alerts.length?alerts.length+' 条提醒':'状态平稳'}</b></button><p class="radarMotto">“${esc(dailyMotto(d))}”</p><p class="radarTop">${esc(top)}</p><ul>${alerts.map(x=>`<li class="${x.level}">${esc(x.text)}</li>`).join('')||'<li class="ok">保持按计划执行</li>'}</ul><small>提醒不会阻止保存或交易记录。</small>`}
 function dashboardPage(d){
  const s=recomputeAccount(d),energy=volumeEnergy(d.market),warnings=dashboardWarnings(d,s),fresh=d.aiPlan.asOf||d.market.asOf||'',ready=[d.market.final,d.emotion.phase,d.sector.name,d.aiPlan.actions].filter(Boolean).length;
  const holdings=(d.holdings||[]).map(h=>{const st=d.stocks.find(x=>x.id===h.stockId),price=nullable(h.price),cost=nullable(h.cost),ret=cost>0&&price!==null?(price-cost)/cost*100:null,plan=planOf(st);return `<tr><td><b>${esc(h.name||'—')}</b><small>${esc(h.code||'')}</small></td><td>${percent(ret)}</td><td>${nullable(h.availableQty)===null?'待核对':esc(h.availableQty)}</td><td>${plan?.stopLoss??'—'}</td><td>${plan?.takeProfit??'—'}</td><td>${esc(h.assessment||'—')}</td><td>${esc(h.adviceStatus||'—')}</td></tr>`}).join('')||'<tr><td colspan="7">当前无持仓</td></tr>';
@@ -552,12 +533,10 @@ function buildAI(d){
   return {holdingId:h.id,stockId:h.stockId,symbol:h.code||null,exchange:h.exchange||null,name:h.name||null,sector:h.sector||null,quantity:qty,availableQuantity:nullable(h.availableQty),cost,recordedPrice:price,priceAsOf:timestamp(h.priceAsOf),previousClose:nullable(h.previousClose),positionPct:equity>0&&price!==null&&qty!==null?price*qty/equity*100:null,unrealizedReturnPct:cost>0&&price!==null?(price-cost)/cost*100:null,originalPlan:clean(h.originalPlan),currentPlan:planOf(st),planHistory:clean(st?.planHistory||[]),currentAssessment:h.assessment||null,lastAdvice:h.lastAdvice?{text:h.lastAdvice,status:h.adviceStatus||null,recordUpdatedAt:h.updatedAt||null}:null};
  }),watchlist:d.stocks.map(st=>({stockId:st.id,symbol:st.code||null,name:st.name||null,heatRank:nullable(st.hot),tradeMode:st.model||null,cycleStage:st.buy.phase||null,plan:planOf(st),userAssessment:st.notes||null})),
  transactions:clean(d.ledger),closedTradeReviews:clean(d.trades),auxiliaryInformation:{institutions:clean(d.leaderboard.institutions),hotMoney:clean(d.leaderboard.hotMoney),bloggerPositions:clean(d.bloggerLogs)},userPlan:{marketExpectation:d.aiPlan.expectation||null,plannedActions:d.aiPlan.actions||null,questionsForAI:d.aiPlan.questions||null},review:clean(d.review),dataQuality:{missingFields:missing,notes:['用户判断与软件计算分开记录；没有接入外部行情。','记录更新时间不等于行情截至时间；缺失字段不能解释为零。','历史持仓缺失的原始计划未推断；持仓快照不会因修改其他日期自动重算。']}};
- return snapshot;
+ return enrichAI(snapshot,d);
 }
 function exportAI(){
  const d=day();if(!d)return;
  if(!d.aiPlan.session){showToast('请先选择盘前、盘中或盘后');return}
  downloadJSON(buildAI(d),'TradeOS-AI-'+d.date+'-'+({'盘前':'pre','盘中':'intraday','盘后':'post'})[d.aiPlan.session]+'.json');
 }
-
-load();ensure();render();
